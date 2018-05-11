@@ -7,7 +7,7 @@ from exceptions import ISBNNotFoundException, BookLogDetailPopupNotOpenException
 import re, math
 
 
-class BookLogInfo:
+class BookLogPageInfo:
     def __init__(self, isbn, page_num, div):
         self.isbn = isbn
         self.page_num = page_num
@@ -121,7 +121,7 @@ class KyoboScraper:
             try:
                 bool_logs_div = self.get_book_log_popup_div()
                 page_num = math.ceil(book_log_count / KyoboScraper.book_log_count_per_page)
-                book_log_info = BookLogInfo(isbn_13, page_num, bool_logs_div)
+                book_log_info = BookLogPageInfo(isbn_13, page_num, bool_logs_div)
                 book_logs = self.get_book_logs(book_log_info)
             except (BookLogDetailPopupNotOpenException, TimeoutException, NoSuchElementException) as e:
                 print(e)
