@@ -12,7 +12,7 @@
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
   <component name="CoverageDataManager">
-    <SUITE FILE_PATH="coverage/BookReviewsProj$Kyobo.coverage" NAME="Kyobo Coverage Results" MODIFIED="1526045122391" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/BookReviewsProj$Kyobo.coverage" NAME="Kyobo Coverage Results" MODIFIED="1526047756092" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
   </component>
   <component name="FavoritesManager">
     <favorites_list name="BookReviewsProj" />
@@ -22,11 +22,20 @@
       <file leaf-file-name="kyobo.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/kyobo.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="373">
-              <caret line="129" column="37" lean-forward="true" selection-start-line="129" selection-start-column="37" selection-end-line="129" selection-end-column="37" />
+            <state relative-caret-position="342">
+              <caret line="29" column="36" lean-forward="true" selection-start-line="29" selection-start-column="36" selection-end-line="29" selection-end-column="36" />
               <folding>
                 <element signature="e#0#43#0" expanded="true" />
               </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="enum.py" pinned="false" current-in-tab="false">
+        <entry file="file:///Library/Frameworks/Python.framework/Versions/3.6/lib/python3.6/enum.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="159">
+              <caret line="597" column="8" selection-start-line="597" selection-start-column="8" selection-end-line="597" selection-end-column="8" />
             </state>
           </provider>
         </entry>
@@ -86,6 +95,8 @@
       <find>2</find>
       <find>128</find>
       <find>http://www.kyobobook.co.kr/product/detailViewKor.laf?mallGb=KOR&amp;ejkGb=KOR&amp;barcode=9788972756194&amp;orderClick=4db</find>
+      <find>페이지에서 ISBN 을 발견하지 못했습니다.</find>
+      <find>book_log_totle</find>
     </findStrings>
   </component>
   <component name="Git.Settings">
@@ -199,9 +210,9 @@
       <window_info anchor="bottom" id="Database Changes" order="7" show_stripe_button="false" />
       <window_info anchor="bottom" id="Version Control" order="7" weight="0.32969698" />
       <window_info anchor="bottom" id="Python Console" order="7" weight="0.35878786" />
-      <window_info anchor="bottom" id="Run" order="2" weight="0.36242425" />
-      <window_info anchor="bottom" id="Terminal" order="7" weight="0.38545454" />
-      <window_info content_ui="combo" id="Project" order="0" sideWeight="0.49796748" visible="true" weight="0.14592275" />
+      <window_info active="true" anchor="bottom" id="Run" order="2" visible="true" weight="0.4" />
+      <window_info anchor="bottom" id="Terminal" order="7" weight="0.09818182" />
+      <window_info content_ui="combo" id="Project" order="0" sideWeight="0.49796748" visible="true" weight="0.16380544" />
       <window_info anchor="bottom" id="Docker" order="7" show_stripe_button="false" />
       <window_info anchor="right" id="Database" order="3" />
       <window_info anchor="right" id="SciView" order="3" />
@@ -494,10 +505,17 @@
         </state>
       </provider>
     </entry>
+    <entry file="file:///Library/Frameworks/Python.framework/Versions/3.6/lib/python3.6/enum.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="159">
+          <caret line="597" column="8" selection-start-line="597" selection-start-column="8" selection-end-line="597" selection-end-column="8" />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/kyobo.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="373">
-          <caret line="129" column="37" lean-forward="true" selection-start-line="129" selection-start-column="37" selection-end-line="129" selection-end-column="37" />
+        <state relative-caret-position="342">
+          <caret line="29" column="36" lean-forward="true" selection-start-line="29" selection-start-column="36" selection-end-line="29" selection-end-column="36" />
           <folding>
             <element signature="e#0#43#0" expanded="true" />
           </folding>

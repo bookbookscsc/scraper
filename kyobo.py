@@ -8,6 +8,8 @@ import re, math
 
 
 class BookLogPageInfo:
+    book_log_count_per_page = 10
+
     def __init__(self, isbn, page_num, div):
         self.isbn = isbn
         self.page_num = page_num
@@ -16,10 +18,21 @@ class BookLogPageInfo:
 
 class KyoboScraper:
 
+    class Xpath:
+        book_detail_a_link = "//a[" \
+                             "(contains(@href, 'barcode'))" \
+                             " and not (contains(@href, 'gift'))" \
+                             " and not (contains(@href, 'sam'))" \
+                             " and not (contains(@href, 'digital'))" \
+                             "]"
+        isbn_span = "//span[@title='ISBN-13']"
+        book_log_total_span = "//h2[@class='title_detail_basic']/span"
+        book_log_popup_trigger_button = "//following::small/a[text()='전체보기']"
+        book_log_popup_div = "//div[@class='title_detail_result']"
+        book_log_li = "//ul[@class='list_detail_booklog']//li"
+        book_log_next_page_button = "//a[@class='btn_next']"
+
     domain = "http://www.kyobobook.co.kr/index.laf"
-    book_detail_xpath = "//a[(contains(@href, 'barcode')) and not (contains(@href, 'gift'))]"
-    isbn_xpath = "//span[@title='ISBN-13']"
-    book_log_count_per_page = 10
     timeout = 5
 
     def __init__(self):
@@ -38,7 +51,7 @@ class KyoboScraper:
         self.driver.get(page_url)
         book_detail_a_tag_elems = WebDriverWait(self.driver, KyoboScraper.timeout).until(
             EC.presence_of_all_elements_located((By.XPATH,
-                                                 KyoboScraper.book_detail_xpath))
+                                                 KyoboScraper.Xpath.book_detail_a_link))
         )
         new_book_detail_links = set((elem.get_attribute('href') for elem in book_detail_a_tag_elems))
         self.book_detail_pages_set |= new_book_detail_links
@@ -46,7 +59,7 @@ class KyoboScraper:
     def get_isbn_13(self):
         try:
             isbn_13 = WebDriverWait(self.driver, KyoboScraper.timeout).until(
-                EC.presence_of_element_located((By.XPATH, KyoboScraper.isbn_xpath))
+                EC.presence_of_element_located((By.XPATH, KyoboScraper.Xpath.isbn_span))
             ).text
         except TimeoutException:
             raise ISBNNotFoundException
@@ -54,7 +67,7 @@ class KyoboScraper:
             return isbn_13
 
     def get_book_log_count(self):
-        total_span_element = self.driver.find_element(By.XPATH, "//h2[@class='title_detail_basic']/span")
+        total_span_element = self.driver.find_element(By.XPATH, KyoboScraper.Xpath.book_log_total_span)
         match = re.search("\((\d+)\)", total_span_element.text)
         if match is None:
             raise NotExistBookLogException
@@ -70,7 +83,7 @@ class KyoboScraper:
     def get_book_log_popup_div(self):
         try:
             open_popup_js = WebDriverWait(self.driver, KyoboScraper.timeout).until(
-                EC.presence_of_element_located((By.XPATH, "//following::small/a[text()='전체보기']"))
+                EC.presence_of_element_located((By.XPATH, KyoboScraper.Xpath.book_log_popup_trigger_button))
             ).get_attribute('onclick')
             self.driver.execute_script(open_popup_js)
 
@@ -81,7 +94,7 @@ class KyoboScraper:
                     self.driver.switch_to.window(window_handle)
                     break
             return WebDriverWait(self.driver, KyoboScraper.timeout).until(
-                EC.presence_of_element_located((By.XPATH, "//div[@class='title_detail_result']"))
+                EC.presence_of_element_located((By.XPATH, KyoboScraper.Xpath.book_log_popup_div))
             )
         except TimeoutException:
             raise BookLogDetailPopupNotOpenException
@@ -89,17 +102,13 @@ class KyoboScraper:
     def get_book_logs(self, info):
         for page in range(info.page_num):
             try:
-                li_xpath = "//ul[@class='list_detail_booklog']//li"
                 li = WebDriverWait(self.driver, KyoboScraper.timeout).until(
-                    EC.presence_of_all_elements_located((By.XPATH, li_xpath))
+                    EC.presence_of_all_elements_located((By.XPATH, KyoboScraper.Xpath.book_log_li))
                 )
                 yield from li
                 if page == info.page_num - 1:
                     break
-                self.driver.find_element(By.XPATH, "//a[@class='btn_next']").click()
-                info.div = WebDriverWait(self.driver, KyoboScraper.timeout).until(
-                    EC.presence_of_element_located((By.XPATH, "//div[@class='title_detail_result']"))
-                )
+                self.driver.find_element(By.XPATH, KyoboScraper.Xpath.book_log_next_page_button).click()
             except (TimeoutException, NoSuchElementException) as e:
                 raise e
 
@@ -120,7 +129,7 @@ class KyoboScraper:
                 continue
             try:
                 bool_logs_div = self.get_book_log_popup_div()
-                page_num = math.ceil(book_log_count / KyoboScraper.book_log_count_per_page)
+                page_num = math.ceil(book_log_count / BookLogPageInfo.book_log_count_per_page)
                 book_log_info = BookLogPageInfo(isbn_13, page_num, bool_logs_div)
                 book_logs = self.get_book_logs(book_log_info)
             except (BookLogDetailPopupNotOpenException, TimeoutException, NoSuchElementException) as e:
