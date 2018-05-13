@@ -12,3 +12,13 @@ class BookLogDetailPopupNotOpenException(Exception):
 class NotExistBookLogException(Exception):
     def __str__(self):
         return "북로그 리뷰가 없습니다."
+
+
+class PaginationException(Exception):
+    def __str__(self):
+        return "올바른 페이지 범위가 아닙니다."
+
+
+class FailToGetTotalPage(Exception):
+    def __str__(self):
+        return "총 리뷰 개수를 구하는데 실패했습니다."
