@@ -27,10 +27,10 @@ class NaverBookScraper:
         url = f'http://book.naver.com/bookdb/review.nhn?bid={bid}&page={page}'
         resp = self.session.get(url=url,
                                 headers=self.headers)
-        return (review_list.attrs['href'] for review_list in resp.html.xpath("//ul[@id='reviewList']/li//a"))
+        return (review_list.attrs['href'] for review_list in resp.html.xpath("//ul[@id='reviewList']/li/dl/dt/a"))
 
 
 if __name__ == '__main__':
     nbs = NaverBookScraper()
-    for review in nbs.get_review_links(bid=13542164, page=2):
+    for review in nbs.get_review_links(bid=7262295, page=30):
         print(review)
