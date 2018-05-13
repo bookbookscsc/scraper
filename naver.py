@@ -1,5 +1,5 @@
 from requests_html import HTMLSession
-from exceptions import FailToGetTotalPage, PaginationException
+from exceptions import FailToGetTotalPageCount, PaginationException
 from urllib3.exceptions import HTTPError
 import re, math
 
