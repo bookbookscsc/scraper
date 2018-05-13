@@ -23,7 +23,7 @@ class NaverBookScraper:
         for i, link in enumerate(resp.html.links):
             try:
                 bid = re.search('http:\/\/book.naver.com\/bookdb\/book_detail\.nhn\?bid=(\d+)', link).group(1)
-                yield bid
+                yield int(bid)
             except AttributeError:
                 continue
 
@@ -64,5 +64,7 @@ class NaverBookScraper:
 
 if __name__ == '__main__':
     naverbook_scraper = NaverBookScraper()
-    for link in naverbook_scraper.get_review_links(13457707):
-        print(link)
+    for bid in naverbook_scraper.get_bids(url='http://book.naver.com/'):
+        for link in naverbook_scraper.get_review_links(bid, page=1):
+            print(link)
+
