@@ -1,7 +1,12 @@
-from requests_html import HTMLSession
-from exceptions import FailToGetTotalPageCount, PaginationException, NotExistReviews
+import re
+import math
+import logging
 from urllib3.exceptions import HTTPError
-import re, math, logging
+from requests_html import HTMLSession
+from exceptions import (FailToGetTotalPageCountError,
+                        PaginationError,
+                        NotExistReviewsError)
+
 
 
 class NaverBooksScraper:
@@ -32,7 +37,7 @@ class NaverBooksScraper:
 
         def gen_review_links_per_page(bid, page):
             if (0 < page <= total_page_num) is False:
-                raise PaginationException(book_name=bid)
+                raise PaginationError(book_name=bid)
 
             url = f'http://book.naver.com/bookdb/review.nhn?bid={bid}&page={page}'
             resp = self.session.get(url=url, headers=self.headers)
@@ -49,7 +54,7 @@ class NaverBooksScraper:
             for page in range(1, 31):
                 try:
                     yield from gen_review_links_per_page(bid, page)
-                except (PaginationException, HTTPError):
+                except (PaginationError, HTTPError):
                     break
 
     def total_page_num(self, bid, page):
@@ -57,12 +62,12 @@ class NaverBooksScraper:
         total_reviews_span = self.session.get(url=url, headers=self.headers).html.xpath("//span[@class='num']")[0]
 
         if total_reviews_span is None:
-            raise FailToGetTotalPageCount(book_name=bid)
+            raise FailToGetTotalPageCountError(book_name=bid)
 
         total_reviews = int(total_reviews_span.search('({}건)')[0].replace(',', ''))
 
         if total_reviews == 0:
-            raise NotExistReviews(book_name=bid)
+            raise NotExistReviewsError(book_name=bid)
 
         total_page_num = math.ceil(total_reviews / 10)
         return total_page_num
@@ -88,7 +93,7 @@ if __name__ == '__main__':
             try:
                 for link in naverbooks_scraper.gen_review_links(bid, page=1):
                     logging.info(f'links of book, bid : {bid}')
-            except NotExistReviews:
+            except NotExistReviewsError:
                 continue
             logging.info(f'success to get links, bid {bid}')
     except Exception as e:
