@@ -1,10 +1,10 @@
 from requests_html import HTMLSession
-from exceptions import FailToGetTotalPageCount, PaginationException
+from exceptions import FailToGetTotalPageCount, PaginationException, NotExistReviews
 from urllib3.exceptions import HTTPError
-import re, math
+import re, math, logging
 
 
-class NaverBookScraper:
+class NaverBooksScraper:
 
     def __init__(self):
         self.session = HTMLSession()
@@ -17,22 +17,22 @@ class NaverBookScraper:
             'Connection': 'keep-alive'
         }
 
-    def get_bids(self, url):
+    def gen_bids(self, url):
         resp = self.session.get(url=url,
                                 headers=self.headers)
-        for i, link in enumerate(resp.html.links):
+        for link_in_html in resp.html.links:
             try:
-                bid = re.search('http:\/\/book.naver.com\/bookdb\/book_detail\.nhn\?bid=(\d+)', link).group(1)
+                bid = re.search('http:\/\/book.naver.com\/bookdb\/book_detail\.nhn\?bid=(\d+)', link_in_html).group(1)
                 yield int(bid)
             except AttributeError:
                 continue
 
-    def get_review_links(self, bid, page=None):
+    def gen_review_links(self, bid, page=None):
         total_page_num = self.total_page_num(bid, page)
 
         def gen_review_links_per_page(bid, page):
             if (0 < page <= total_page_num) is False:
-                raise PaginationException
+                raise PaginationException(book_name=bid)
 
             url = f'http://book.naver.com/bookdb/review.nhn?bid={bid}&page={page}'
             resp = self.session.get(url=url, headers=self.headers)
@@ -44,6 +44,7 @@ class NaverBookScraper:
 
         if page:
             yield from gen_review_links_per_page(bid, page)
+
         else:
             for page in range(1, 31):
                 try:
@@ -53,18 +54,42 @@ class NaverBookScraper:
 
     def total_page_num(self, bid, page):
         url = f'http://book.naver.com/bookdb/review.nhn?bid={bid}&page={page}'
-        try:
-            total_reviews_span = self.session.get(url=url, headers=self.headers).html.xpath("//span[@class='num']")[0]
-            total_reviews = int(total_reviews_span.search('({}건)')[0].replace(',', ''))
-            total_page_num = math.ceil(total_reviews / 10)
-        except Exception:
-            raise FailToGetTotalPage
+        total_reviews_span = self.session.get(url=url, headers=self.headers).html.xpath("//span[@class='num']")[0]
+
+        if total_reviews_span is None:
+            raise FailToGetTotalPageCount(book_name=bid)
+
+        total_reviews = int(total_reviews_span.search('({}건)')[0].replace(',', ''))
+
+        if total_reviews == 0:
+            raise NotExistReviews(book_name=bid)
+
+        total_page_num = math.ceil(total_reviews / 10)
         return total_page_num
 
 
 if __name__ == '__main__':
-    naverbook_scraper = NaverBookScraper()
-    for bid in naverbook_scraper.get_bids(url='http://book.naver.com/'):
-        for link in naverbook_scraper.get_review_links(bid, page=1):
-            print(link)
+    naverbooks_logger = logging.getLogger('Naver Books scraper logger')
+    formatter = logging.Formatter('asctime : %(asctime)s '
+                                  'funcName : %(funcName)s, '
+                                  'message : %(message)s '
+                                  'lineNums : %(lineno)d')
 
+    file_handler = logging.FileHandler('naver.log')
+    file_handler.setFormatter(formatter)
+    naverbooks_logger.addHandler(file_handler)
+    naverbooks_logger.setLevel(logging.INFO)
+
+    naverbooks_scraper = NaverBooksScraper()
+
+    try:
+        for bid in naverbooks_scraper.gen_bids(url='http://book.naver.com/'):
+            naverbooks_logger.info(f'try to get links, bid {bid}')
+            try:
+                for link in naverbooks_scraper.gen_review_links(bid, page=1):
+                    logging.info(f'links of book, bid : {bid}')
+            except NotExistReviews:
+                continue
+            logging.info(f'success to get links, bid {bid}')
+    except Exception as e:
+        naverbooks_logger.error(e)
