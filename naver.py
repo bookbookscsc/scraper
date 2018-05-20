@@ -8,7 +8,6 @@ from exceptions import (FailToGetTotalPageCountError,
                         NotExistReviewsError)
 
 
-
 class NaverBooksScraper:
 
     def __init__(self):
