@@ -20,24 +20,31 @@ class NaverBooksScraper:
                           'Chrome/66.0.3359.139 Safari/537.36',
             'Connection': 'keep-alive'
         }
+        self.logger = None
+        self.scraping_bid_sets = set()
+        self.scraped_bid_sets = set()
 
-    def gen_bids(self, url):
+    def update_scraping_bids_from(self, url):
         resp = self.session.get(url=url,
                                 headers=self.headers)
         for link_in_html in resp.html.links:
             try:
                 bid = re.search('http:\/\/book.naver.com\/bookdb\/book_detail\.nhn\?bid=(\d+)', link_in_html).group(1)
-                yield int(bid)
+                if bid not in self.scraped_bid_sets:
+                    self.scraping_bid_sets.add(bid)
             except AttributeError:
                 continue
+        del resp
 
-    def gen_review_links(self, bid, page=None):
+    def gen_review_links(self, bid, page=0):
         total_page_num = self.total_page_num(bid, page)
+        url = f'http://book.naver.com/bookdb/review.nhn?bid={bid}&page={page}'
+        self.update_scraping_bids_from(url)
 
         def gen_review_links_per_page(bid, page):
+
             if (0 < page <= total_page_num) is False:
                 raise PaginationError(book_name=bid)
-
             url = f'http://book.naver.com/bookdb/review.nhn?bid={bid}&page={page}'
             resp = self.session.get(url=url, headers=self.headers)
             if resp.ok:
@@ -45,16 +52,14 @@ class NaverBooksScraper:
                     yield review_list.attrs['href']
             else:
                 raise HTTPError
+            del resp
 
-        if page:
+        if page != 0:
             yield from gen_review_links_per_page(bid, page)
 
         else:
-            for page in range(1, 31):
-                try:
-                    yield from gen_review_links_per_page(bid, page)
-                except (PaginationError, HTTPError):
-                    break
+            for page in range(1, 11):
+                yield from gen_review_links_per_page(bid, page)
 
     def total_page_num(self, bid, page):
         url = f'http://book.naver.com/bookdb/review.nhn?bid={bid}&page={page}'
@@ -69,11 +74,47 @@ class NaverBooksScraper:
             raise NotExistReviewsError(book_name=bid)
 
         total_page_num = math.ceil(total_reviews / 10)
+
+        del total_reviews_span
+
         return total_page_num
+
+    def set_logger(self, logger):
+        self.logger = logger
+
+    def start(self, start_url='http://book.naver.com/'):
+        self.update_scraping_bids_from(start_url)
+
+        while True:
+            bid = self.scraping_bid_sets.pop()
+            print(f'bid : {bid}')
+            print(f"current scraped_bid_sets count : {len(self.scraped_bid_sets)}")
+            print(f"current scraping_bid_sets count : {len(self.scraping_bid_sets)}")
+            try:
+                for link in self.gen_review_links(bid):
+                    print(link)
+
+            except NotExistReviewsError:
+                self.logger.error(f'book[bid={bid}], has not reviews')
+                continue
+
+            except PaginationError:
+                self.logger.error(f'book[bid={bid}], reach end page')
+                continue
+
+            except FailToGetTotalPageCountError:
+                self.logger.error(f'book[bid={bid}], fail to parse total reviews span')
+                continue
+
+            finally:
+                self.scraped_bid_sets.add(bid)
+
+            if not self.scraping_bid_sets:
+                break
 
 
 if __name__ == '__main__':
-    naverbooks_logger = logging.getLogger('Naver Books scraper logger')
+    naverbook_logger = logging.getLogger('Naver Books scraper logger')
     formatter = logging.Formatter('asctime : %(asctime)s '
                                   'funcName : %(funcName)s, '
                                   'message : %(message)s '
@@ -81,19 +122,13 @@ if __name__ == '__main__':
 
     file_handler = logging.FileHandler('naver.log')
     file_handler.setFormatter(formatter)
-    naverbooks_logger.addHandler(file_handler)
-    naverbooks_logger.setLevel(logging.INFO)
+    naverbook_logger.addHandler(file_handler)
+    naverbook_logger.setLevel(logging.INFO)
 
-    naverbooks_scraper = NaverBooksScraper()
+    naverbook_scraper = NaverBooksScraper()
+    naverbook_scraper.logger = naverbook_logger
 
     try:
-        for bid in naverbooks_scraper.gen_bids(url='http://book.naver.com/'):
-            naverbooks_logger.info(f'try to get links, bid {bid}')
-            try:
-                for link in naverbooks_scraper.gen_review_links(bid, page=1):
-                    logging.info(f'links of book, bid : {bid}')
-            except NotExistReviewsError:
-                continue
-            logging.info(f'success to get links, bid {bid}')
+        naverbook_scraper.start()
     except Exception as e:
-        naverbooks_logger.error(e)
+        naverbook_logger.error(e)
