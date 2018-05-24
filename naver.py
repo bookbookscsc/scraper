@@ -11,13 +11,15 @@ from exceptions import (FailToGetTotalPageCountError,
 class NaverBooksScraper:
 
     def __init__(self):
-        self.session = HTMLSession()
+        self.session = HTMLSession(mock_browser=False)
         self.headers = {
-            'Accept': 'application/json, text/javascript, */*; q=0.01',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
             'Accept-Language': 'ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7',
-            'Referer': f'www.naver.com',
-            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_4) AppleWebKit/537.36 (KHTML, like Gecko) '
-                          'Chrome/66.0.3359.139 Safari/537.36',
+            'Accept-Encoding': 'gzip, deflate',
+            'Referer': 'http://203.229.225.135/tm/?a=CR&b=MAC&c=300015071805&d=32&e=5301&f=Ym9vay5uYXZlci5jb20='
+                       '&g=1527138088560&h=1527138088581&y=0&z=0&x=1&w=2017-11-06&in=5301_00014684&id=20180524',
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_4) AppleWebKit/537.36 (KHTML, like Gecko)'
+                          ' Chrome/66.0.3359.181 Safari/537.36',
             'Connection': 'keep-alive'
         }
         self.logger = None
@@ -38,15 +40,11 @@ class NaverBooksScraper:
 
     def gen_review_links(self, bid, page=0):
         total_page_num = self.total_page_num(bid, page)
-        url = f'http://book.naver.com/bookdb/review.nhn?bid={bid}&page={page}'
+        url = f'http://book.naver.com/bookdb/review.nhn?bid={bid}'
         self.update_scraping_bids_from(url)
 
-        def gen_review_links_per_page(bid, page):
-
-            if (0 < page <= total_page_num) is False:
-                raise PaginationError(book_name=bid)
-            url = f'http://book.naver.com/bookdb/review.nhn?bid={bid}&page={page}'
-            resp = self.session.get(url=url, headers=self.headers)
+        def gen_reviews_links_per_page(page):
+            resp = self.session.get(url=f'{url}&page={page}', headers=self.headers)
             if resp.ok:
                 for review_list in resp.html.xpath("//ul[@id='reviewList']/li/dl/dt/a"):
                     yield review_list.attrs['href']
@@ -54,12 +52,8 @@ class NaverBooksScraper:
                 raise HTTPError
             del resp
 
-        if page != 0:
-            yield from gen_review_links_per_page(bid, page)
-
-        else:
-            for page in range(1, 11):
-                yield from gen_review_links_per_page(bid, page)
+        for page in range(1, total_page_num + 1):
+            yield from gen_reviews_links_per_page(page)
 
     def total_page_num(self, bid, page):
         url = f'http://book.naver.com/bookdb/review.nhn?bid={bid}&page={page}'
@@ -76,13 +70,12 @@ class NaverBooksScraper:
         total_page_num = math.ceil(total_reviews / 10)
 
         del total_reviews_span
-
         return total_page_num
 
     def set_logger(self, logger):
         self.logger = logger
 
-    def start(self, start_url='http://book.naver.com/'):
+    def start(self, start_url='http://book.naver.com'):
         self.update_scraping_bids_from(start_url)
 
         while True:
