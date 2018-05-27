@@ -1,5 +1,7 @@
 import re
 import logging
+import math
+from concurrent.futures import ProcessPoolExecutor
 from urllib3.exceptions import HTTPError
 from requests_html import HTMLSession
 from exceptions import (FailToGetTotalPageCountError,
@@ -7,9 +9,7 @@ from exceptions import (FailToGetTotalPageCountError,
                         NotExistReviewsError)
 
 
-class NaverBooksScraper:
-
-    PAGE_LIMIT = 10
+class NaverBookScraper(object):
 
     def __init__(self, logger=None):
         self.session = HTMLSession()
@@ -23,86 +23,39 @@ class NaverBooksScraper:
                           ' Chrome/66.0.3359.181 Safari/537.36',
             'Connection': 'keep-alive'
         }
+        self.book_detail_url = 'http://book.naver.com/bookdb/review.nhn?bid='
         self.logger = logger
-        self.scraping_bid_sets = set()
-        self.scraped_bid_sets = set()
 
-    def update_scraping_bids_in(self, html):
-        for link_in_html in html.links:
-            try:
-                bid = re.search('http:\/\/book.naver.com\/bookdb\/book_detail\.nhn\?bid=(\d+)', link_in_html).group(1)
-                if bid not in self.scraped_bid_sets:
-                    self.scraping_bid_sets.add(bid)
-            except AttributeError:
-                continue
-
-    def gen_review_links(self, bid):
-        url = f'http://book.naver.com/bookdb/review.nhn?bid={bid}'
-        response = self.session.get(url, headers=self.headers)
+    def scrape(self, bid):
+        response = self.session.get(self.book_detail_url + str(bid),
+                                    headers=self.headers)
         html = response.html
-        self.update_scraping_bids_in(html)
-        review_count = self.get_reviews_count(bid, html)
-        self.logger.info(f'{bid} review count is {review_count}')
-        del response
+        txt_desc = html.xpath("//div[@class='txt_desc']//strong")
+        star = txt_desc[0].text
+        review_count = int(txt_desc[1].text)
+        print(star, review_count)
+        if review_count > 0:
+            for review in self.get_recently_reviews_in(html, bid, 10):
+                print(review)
 
-        def gen_reviews_links_per_page(cur_page):
-            resp = self.session.get(url=f'{url}&page={cur_page}', headers=self.headers)
-            try:
-                if resp.ok:
-                    for review_list in resp.html.xpath("//ul[@id='reviewList']/li/dl/dt/a"):
-                        yield review_list.attrs['href']
-                else:
-                    raise HTTPError
-            finally:
-                del resp
+    def get_recently_reviews_in(self, html, bid, count):
+        def gen_reviews(html, bid, page):
+            cur_page = 1
+            while cur_page <= page:
+                for dl in html.xpath("//ul[@id='reviewList']/li/dl"):
+                    title = dl.xpath("//dt")[0].text
+                    text = dl.xpath("//dd[starts-with(@id,'review_text')]")[0].text
+                    date = dl.xpath("//dd[@class='txt_inline']")[-1].text
+                    link = dl.xpath("//a")[0].attrs['href']
+                    yield (title, text, date, link)
+                cur_page += 1
+                html = self.session.get(self.book_detail_url + f'{bid}&page={cur_page}').html
+        page = math.ceil(count / 10)
+        yield from gen_reviews(html, bid, page)
 
-        for page in range(1, NaverBooksScraper.PAGE_LIMIT):
-            yield from gen_reviews_links_per_page(page)
-
-    def get_reviews_count(self, bid, html):
-        total_reviews_span = html.xpath("//span[@class='num']")[0]
-
-        if total_reviews_span is None:
-            raise FailToGetTotalPageCountError(book_name=bid)
-
-        try:
-            total_reviews = int(total_reviews_span.search('({}건)')[0].replace(',', ''))
-        except ValueError:
-            raise FailToGetTotalPageCountError(book_name=bid)
-
-        return total_reviews
-
-    def start(self, start_url='http://book.naver.com'):
-        response = self.session.get(start_url, headers=self.headers)
-        self.update_scraping_bids_in(response.html)
-        del response
-
-        while True:
-            bid = self.scraping_bid_sets.pop()
-            print(f'bid : {bid}')
-            print(f"current scraped_bid_sets count : {len(self.scraped_bid_sets)}")
-            print(f"current scraping_bid_sets count : {len(self.scraping_bid_sets)}")
-            try:
-                for link in self.gen_review_links(bid):
-                    print(link)
-
-            except NotExistReviewsError:
-                self.logger.error(f'book[bid={bid}], has not reviews')
-                continue
-
-            except PaginationError:
-                self.logger.error(f'book[bid={bid}], reach end page')
-                continue
-
-            except FailToGetTotalPageCountError:
-                self.logger.error(f'book[bid={bid}], fail to parse total reviews span')
-                continue
-
-            finally:
-                self.scraped_bid_sets.add(bid)
-
-            if not self.scraping_bid_sets:
-                break
+    def save(self):
+        #db에 저장
+        pass
 
 
 def prepare(logger):
@@ -120,10 +73,11 @@ def prepare(logger):
 if __name__ == '__main__':
     logger = logging.getLogger('Naver Books scraper logger')
     prepare(logger)
-
+    worker_count = 12
+    pool = ProcessPoolExecutor(max_workers=worker_count)
     try:
-        scraper = NaverBooksScraper(logger=logger)
-        scraper.start()
+        scraper = NaverBookScraper(logger=logger)
+        pool.map(scraper.scrape, [7150363, 13552931, 13495999])
     except Exception as e:
         logger.error(e)
 
