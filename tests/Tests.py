@@ -41,8 +41,11 @@ class KyoboTest(unittest.TestCase):
 
     def test_get_book_detail_page_info(self):
         book_detail_info = self.kyobo.get_review_page_info(9791162540169)
-        self.assertEqual(9.5, book_detail_info['stars'])
-        self.assertEqual(115, book_detail_info['total'])
+        self.assertIsInstance(book_detail_info['stars'], float)
+        self.assertIsInstance(book_detail_info['total'], int)
+        book_detail_info = self.kyobo.get_review_page_info(9791188461332)
+        self.assertIsInstance(book_detail_info['stars'], float)
+        self.assertIsInstance(book_detail_info['total'], int)
 
     def test_get_reviews(self):
         self.assertEqual(30, len(list(self.kyobo.get_reviews(9791162540169, 30))))
