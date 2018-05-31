@@ -1,12 +1,12 @@
 class BookScrapingError(Exception):
-    def __init__(self, provider_name=None, book_name=None):
-        self.provider_name = provider_name
-        self.book_name = book_name
+    def __init__(self, store, isbn):
+        self.store = store
+        self.isbn = isbn
 
 
-class ISBNNotFoundError(BookScrapingError):
+class FindBookIDError(BookScrapingError):
     def __str__(self):
-        return "페이지에서 ISBN 을 발견하지 못했습니다."
+        return f"Failed to find book id with {self.isbn} in {self.store}"
 
 
 class BookLogDetailPopupNotOpenError(BookScrapingError):
