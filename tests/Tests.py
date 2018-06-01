@@ -33,6 +33,14 @@ class NaverbookTest(unittest.TestCase):
         self.assertEqual(40, len(list(self.naver.get_reviews(9791162540169, 40))))
         self.assertEqual(1, len(list(self.naver.get_reviews(9791162540169, 1))))
 
+    def test_scraping_reviews_content(self):
+        for review in self.naver.get_reviews(9791158160784, 5):
+            self.assertIsInstance(review.title, str)
+            self.assertIsInstance(review.text, str)
+            self.assertIsInstance(review.created, str)
+            self.assertIsInstance(review.detail_link, str)
+            self.assertIsInstance(review.thumb_nail_link, str)
+
 
 class KyoboTest(unittest.TestCase):
 
@@ -48,9 +56,15 @@ class KyoboTest(unittest.TestCase):
         self.assertIsInstance(book_detail_info['total'], int)
 
     def test_get_reviews(self):
-        self.assertEqual(30, len(list(self.kyobo.get_reviews(9791162540169, 30))))
         self.assertEqual(15, len(list(self.kyobo.get_reviews(9791162540169, 15))))
         self.assertEqual(1, len(list(self.kyobo.get_reviews(9791162540169, 1))))
+
+    def test_scraping_reviews_content(self):
+        for review in self.kyobo.get_reviews(9791158160784, 5):
+            self.assertIsInstance(review.text, str)
+            self.assertIsInstance(review.created, str)
+            self.assertIsInstance(review.rating, float)
+            self.assertIsInstance(review.likes, int)
 
 
 if __name__ == '__main__':

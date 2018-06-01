@@ -1,20 +1,13 @@
 import re
 import math
+from collections import namedtuple
 from functools import lru_cache
 from requests_html import HTMLSession
-from exceptions import FindBookIDError
-
-
-class Review:
-    def __init__(self, title, thumb_link, content, created_date, detail_link):
-        self.title = title
-        self.content = content
-        self.thumb_link = thumb_link
-        self.created_date = created_date
-        self.detail_link = detail_link
+from exceptions import FindBookIDError, ScrapeReviewContentsError
 
 
 class BookStore(object):
+
     headers = {
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
         'Accept-Language': 'ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7',
@@ -28,15 +21,15 @@ class BookStore(object):
 
     def find_book_id_with_isbn(self, isbn):
         if re.match('[\d+]{10}|[\d+]{13} ', str(isbn)) is None:
-            raise FindBookIDError(isbn=isbn, store=self)
+            raise FindBookIDError(isbn=isbn, bookstore=self)
 
         url_to_find_id = self.url_to_find_id
         id_a_tag_xpath = self.id_a_tag_xpath
         response = self.session.get(url_to_find_id + f'{isbn}', headers=BookStore.headers)
         try:
             return int(response.html.xpath(id_a_tag_xpath)[0].attrs['href'].split('=')[-1])
-        except Exception:
-            raise FindBookIDError(isbn=isbn, store=self)
+        except (ValueError, IndexError, AttributeError) as e:
+            raise FindBookIDError(isbn=isbn, bookstore=self, reason=e)
 
     def make_book_review_url(self, book_id):
         return self.book_review_url + f'{book_id}'
@@ -57,6 +50,8 @@ class BookStore(object):
 
 
 class Naver(BookStore):
+
+    Review = namedtuple("NaverReview", ["title", "text", "created", "thumb_nail_link", "detail_link"])
 
     def __init__(self):
         self.session = HTMLSession()
@@ -88,20 +83,24 @@ class Naver(BookStore):
             cur_page = 1
             cur_count = 0
             while cur_page <= page:
-                for li in html.xpath("//ul[@id='reviewList']/li"):
-                    thumb_div = li.xpath("//div[@class='thumb']")
-                    detail_link = None
-                    thumb_link = None
-                    if thumb_div:
-                        detail_link = thumb_div[-1].xpath("//a")[-1].attrs['href']
-                        thumb_link = thumb_div[-1].xpath("//a/img")[-1].attrs['src']
-                    title = li.xpath("//dl/dt")[0].text
-                    content = li.xpath("//dl/dd[starts-with(@id,'review_text')]")[0].text
-                    date = li.xpath("//dl/dd[@class='txt_inline']")[-1].text
-                    yield Review(title, content, date, detail_link, thumb_link)
-                    cur_count += 1
-                    if cur_count >= count:
-                        return
+                try:
+                    for li in html.xpath("//ul[@id='reviewList']/li"):
+                        thumb_div = li.xpath("//div[@class='thumb']")
+                        title = li.xpath("//dl/dt")[0].text
+                        text = li.xpath("//dl/dd[starts-with(@id,'review_text')]")[0].text
+                        date = li.xpath("//dl/dd[@class='txt_inline']")[-1].text
+                        if thumb_div:
+                            detail_link = thumb_div[-1].xpath("//a")[-1].attrs['href']
+                            thumb_link = thumb_div[-1].xpath("//a/img")[-1].attrs['src']
+                            yield Naver.Review(title=title, text=text, created=date,
+                                               thumb_nail_link=thumb_link, detail_link=detail_link)
+                        else:
+                            yield Naver.Review(title, text=text, created=date, thumb_nail_link=None, detail_link=None)
+                        cur_count += 1
+                        if cur_count >= count:
+                            return
+                except (IndexError, AttributeError, ValueError) as e:
+                    raise ScrapeReviewContentsError(bookstore=self, isbn=isbn, reason=e)
                 cur_page += 1
                 html = self.session.get(self.book_review_url + f'{book_id}&page={cur_page}').html
 
@@ -113,6 +112,8 @@ class Naver(BookStore):
 
 
 class Kyobo(BookStore):
+
+    Review = namedtuple("KyoboReview", ["text", "created", "rating", "likes"])
 
     def __init__(self):
         self.session = HTMLSession()
@@ -143,11 +144,18 @@ class Kyobo(BookStore):
             cur_page = 1
             cur_count = 0
             while cur_page <= page:
-                for li in html.xpath("//ul[@class='board_list']/li"):
-                    yield li
-                    cur_count += 1
-                    if cur_count >= count:
-                        return
+                try:
+                    for li in html.xpath("//ul[@class='board_list']/li/div[@class='comment_wrap']"):
+                        date = li.xpath("//dl/dd[@class='date']")[0].text
+                        rating = li.xpath("//dl/dd[@class='kloverRating']/span")[0].text
+                        text = li.xpath("//dl/dd[@class='comment']/div[@class='txt']")[0].text
+                        likes = li.xpath("//li[@class='cmt_like']/span")[0].text
+                        yield Kyobo.Review(text=text.strip(), created=date, rating=float(rating), likes=int(likes))
+                        cur_count += 1
+                        if cur_count >= count:
+                            return
+                except (IndexError, AttributeError, ValueError) as e:
+                    raise ScrapeReviewContentsError(bookstore=self, isbn=isbn, reason=e)
                 cur_page += 1
                 js = f"javascript:_go_targetPage({cur_page})"
                 html.render(script=js,
