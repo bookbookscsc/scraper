@@ -1,1 +1,0 @@
-### A Simple Book Review Scraper
