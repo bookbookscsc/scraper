@@ -1,6 +1,6 @@
 import unittest
-from exceptions import FindBookIDError
-from book_review_scraper import Naverbook, Kyobo
+from book_review_scraper.exceptions import FindBookIDError
+from book_review_scraper.bookstores import Naverbook, Kyobo
 
 
 class NaverbookTest(unittest.TestCase):

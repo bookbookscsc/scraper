@@ -2,7 +2,7 @@ import os
 import sqlite3
 import logging
 from datetime import datetime, timedelta
-from exceptions import BookIdCacheMissError, BookIdCacheExpiredError
+from book_review_scraper.exceptions import BookIdCacheMissError, BookIdCacheExpiredError
 
 
 class SqliteCache:

@@ -2,8 +2,8 @@ import re
 import math
 from collections import namedtuple
 from requests_html import HTMLSession
-import cache
-from exceptions import FindBookIDError, ScrapeReviewContentsError
+from book_review_scraper import cache
+from book_review_scraper.exceptions import FindBookIDError, ScrapeReviewContentsError
 
 
 class BookStore(object):
