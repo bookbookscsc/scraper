@@ -1,13 +1,9 @@
 import re
 import math
-import os
 from collections import namedtuple
 from requests_html import HTMLSession
 import cache
 from exceptions import FindBookIDError, ScrapeReviewContentsError
-
-ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
-CACHE_DIR = os.path.join(ROOT_DIR, '.cache')
 
 
 class BookStore(object):
@@ -53,9 +49,9 @@ class BookStore(object):
         pass
 
 
-class Naver(BookStore):
+class Naverbook(BookStore):
 
-    Review = namedtuple("NaverReview", ["title", "text", "created", "thumb_nail_link", "detail_link"])
+    Review = namedtuple("NaverbookReview", ["title", "text", "created", "detail_link", "thumb_nail_link"])
 
     def __init__(self):
         self.session = HTMLSession()
@@ -65,12 +61,12 @@ class Naver(BookStore):
         self.book_review_url = 'http://book.naver.com/bookdb/review.nhn?bid='
         self.review_info_xpath = "//div[@class='txt_desc']//strong"
 
-    @cache.cache_book_id(CACHE_DIR, 'Naverbooks')
+    @cache.cache_book_id('Naverbooks')
     def find_book_id_with_isbn(self, isbn):
-        return super(Naver, self).find_book_id_with_isbn(isbn)
+        return super(Naverbook, self).find_book_id_with_isbn(isbn)
 
     def get_review_page_info(self, isbn):
-        review_page_info = super(Naver, self).get_review_page_info(isbn)
+        review_page_info = super(Naverbook, self).get_review_page_info(isbn)
         review_info_component = review_page_info["html"].xpath(self.review_info_xpath)
         stars = float(re.search('\d\.?\d?', review_info_component[0].text).group())
         total = int(review_info_component[1].text)
@@ -89,17 +85,18 @@ class Naver(BookStore):
             while cur_page <= page:
                 try:
                     for li in html.xpath("//ul[@id='reviewList']/li"):
-                        thumb_div = li.xpath("//div[@class='thumb']")
                         title = li.xpath("//dl/dt")[0].text
                         text = li.xpath("//dl/dd[starts-with(@id,'review_text')]")[0].text
                         date = li.xpath("//dl/dd[@class='txt_inline']")[-1].text
+                        detail_link = li.xpath("//dl/dt/a")[-1].attrs['href']
+                        thumb_div = li.xpath("//div[@class='thumb']")
                         if thumb_div:
-                            detail_link = thumb_div[-1].xpath("//a")[-1].attrs['href']
                             thumb_link = thumb_div[-1].xpath("//a/img")[-1].attrs['src']
-                            yield Naver.Review(title=title, text=text, created=date,
-                                               thumb_nail_link=thumb_link, detail_link=detail_link)
+                            yield Naverbook.Review(title=title, text=text, created=date,
+                                                   detail_link=detail_link, thumb_nail_link=thumb_link)
                         else:
-                            yield Naver.Review(title, text=text, created=date, thumb_nail_link=None, detail_link=None)
+                            yield Naverbook.Review(title, text=text, created=date,
+                                                   detail_link=detail_link, thumb_nail_link=None)
                         cur_count += 1
                         if cur_count >= count:
                             return
@@ -132,7 +129,7 @@ class Kyobo(BookStore):
     def get_review_page_info(self, isbn):
         review_page_info = super(Kyobo, self).get_review_page_info(isbn)
         html = review_page_info['html']
-        html.render(retries=15, wait=2, scrolldown=5, sleep=0.3, keep_page=True)
+        html.render(retries=10, wait=2, scrolldown=5, sleep=0.3, keep_page=True)
         stars_info_text = html.xpath("//div[@class='klover_review']//strong[@class='score']")[-1].text
         stars = float(re.search('\d\.?\d?', stars_info_text).group())
         total = int(re.search("\((\d+)\)", html.xpath("//span[@class='kloverTotal']")[-1].text).group(1))
