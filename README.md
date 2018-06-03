@@ -15,4 +15,4 @@ for review in kyobo.get_reviews(isbn=9791158160784, count=10):
     print(review.text)
     ...
 
-```
+```pyth

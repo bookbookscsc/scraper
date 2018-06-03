@@ -25,7 +25,7 @@ setup(
         #   3 - Alpha
         #   4 - Beta
         #   5 - Production/Stable
-        'Development Status :: 4 - Alpha',
+        'Development Status :: 4 - Beta',
 
         # 어느 독자를 대상으로 만들어진 프로젝트인지 표시하라
         'Intended Audience :: Developers',
