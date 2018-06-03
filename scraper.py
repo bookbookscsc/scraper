@@ -1,9 +1,13 @@
 import re
 import math
+import os
 from collections import namedtuple
-from functools import lru_cache
 from requests_html import HTMLSession
+import cache
 from exceptions import FindBookIDError, ScrapeReviewContentsError
+
+ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
+CACHE_DIR = os.path.join(ROOT_DIR, '.cache')
 
 
 class BookStore(object):
@@ -61,7 +65,7 @@ class Naver(BookStore):
         self.book_review_url = 'http://book.naver.com/bookdb/review.nhn?bid='
         self.review_info_xpath = "//div[@class='txt_desc']//strong"
 
-    @lru_cache(maxsize=128)
+    @cache.cache_book_id(CACHE_DIR, 'Naverbooks')
     def find_book_id_with_isbn(self, isbn):
         return super(Naver, self).find_book_id_with_isbn(isbn)
 
@@ -108,7 +112,7 @@ class Naver(BookStore):
         yield from gen_reviews(html, book_id, page, count)
 
     def __str__(self):
-        return "Naver Book"
+        return "Naverbook"
 
 
 class Kyobo(BookStore):
@@ -168,4 +172,3 @@ class Kyobo(BookStore):
 
     def __str__(self):
         return "Kyobo"
-
