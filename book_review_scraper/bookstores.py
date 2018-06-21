@@ -3,47 +3,48 @@ import math
 from collections import namedtuple
 from requests_html import HTMLSession
 from book_review_scraper import cache
-from book_review_scraper.exceptions import FindBookIDError, ScrapeReviewContentsError
+from book_review_scraper.exceptions import FindBookIDError, ScrapeReviewContentsError, ISBNError
+
+config = {
+        'headers': {
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
+            'Accept-Language': 'ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7',
+            'Accept-Encoding': 'gzip, deflate',
+            'Referer': 'http://203.229.225.135/tm/?a=CR&b=MAC&c=300015071805&d=32&e=5301&f=Ym9vay5uYXZlci5jb20='
+                       '&g=1527138088560&h=1527138088581&y=0&z=0&x=1&w=2017-11-06&in=5301_00014684&id=20180524',
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_4) AppleWebKit/537.36 (KHTML, like Gecko)'
+                          ' Chrome/66.0.3359.181 Safari/537.36',
+        }
+    }
 
 
 class BookStore(object):
     """ 인터넷서점을 나타내는 클래스
 
     """
-    headers = {
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
-        'Accept-Language': 'ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7',
-        'Accept-Encoding': 'gzip, deflate',
-        'Referer': 'http://203.229.225.135/tm/?a=CR&b=MAC&c=300015071805&d=32&e=5301&f=Ym9vay5uYXZlci5jb20='
-                   '&g=1527138088560&h=1527138088581&y=0&z=0&x=1&w=2017-11-06&in=5301_00014684&id=20180524',
-        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_4) AppleWebKit/537.36 (KHTML, like Gecko)'
-                      ' Chrome/66.0.3359.181 Safari/537.36',
-        'Connection': 'keep-alive'
-    }
+    config = {}
 
-    def __init__(self, headers=None):
+    def __init__(self):
         self.session = HTMLSession()
-        self.headers = headers
 
-    def find_book_id_with_isbn(self, isbn):
-        if re.match('[\d+]{10}|[\d+]{13} ', str(isbn)) is None:
-            raise FindBookIDError(isbn=isbn, bookstore=self)
-
+    def _find_book_id_with_isbn13(self, isbn13):
+        if re.match('[\d+]{13} ', str(isbn13)) is None:
+            raise ISBNError(bookstore=self, isbn13=isbn13)
         url_to_find_id = self.url_to_find_id
         id_a_tag_xpath = self.id_a_tag_xpath
-        response = self.session.get(url_to_find_id + f'{isbn}', headers=BookStore.headers)
+        response = self.session.get(url_to_find_id + f'{isbn13}', headers=config["headers"])
         try:
             return int(response.html.xpath(id_a_tag_xpath)[0].attrs['href'].split('=')[-1])
         except (ValueError, IndexError, AttributeError) as e:
-            raise FindBookIDError(isbn=isbn, bookstore=self, reason=e)
+            raise FindBookIDError(isbn13=isbn13, bookstore=self, reason=e)
 
-    def make_book_review_url(self, book_id):
+    def _make_book_review_url(self, book_id):
         return self.book_review_url + f'{book_id}'
 
-    def get_review_page_info(self, isbn):
-        book_id = self.find_book_id_with_isbn(isbn)
-        book_review_url = self.make_book_review_url(book_id)
-        book_detail_page_html = self.session.get(book_review_url, headers=BookStore.headers).html
+    def get_review_page_info(self, isbn13):
+        book_id = self._find_book_id_with_isbn13(isbn13)
+        book_review_url = self._make_book_review_url(book_id)
+        book_detail_page_html = self.session.get(book_review_url, headers=config["headers"]).html
         page_info = {
             'id': book_id,
             'url': book_review_url,
@@ -52,7 +53,7 @@ class BookStore(object):
         return page_info
 
     @classmethod
-    def get_reviews(cls, **kwargs):
+    def get_reviews(cls, *args, **kwargs):
         raise NotImplementedError
 
 
@@ -69,24 +70,25 @@ class Naverbook(BookStore):
         self.review_info_xpath = "//div[@class='txt_desc']//strong"
 
     @cache.cache_book_id('Naverbooks')
-    def find_book_id_with_isbn(self, isbn):
-        return super(Naverbook, self).find_book_id_with_isbn(isbn)
+    def _find_book_id_with_isbn13(self, isbn13):
+        return super(Naverbook, self)._find_book_id_with_isbn13(isbn13)
 
-    def get_review_page_info(self, isbn):
-        review_page_info = super(Naverbook, self).get_review_page_info(isbn)
+    def get_review_page_info(self, isbn13):
+        review_page_info = super(Naverbook, self).get_review_page_info(isbn13)
         review_info_component = review_page_info["html"].xpath(self.review_info_xpath)
         stars = float(re.search('\d\.?\d?', review_info_component[0].text).group())
         total = int(review_info_component[1].text)
         return {**review_page_info, **{'stars': stars, 'total': total}}
 
     @classmethod
-    def get_reviews(cls, **kwargs):
-        isbn = kwargs['isbn']
-        count = kwargs['count']
-        bookstore = cls()
+    def get_reviews(cls, *args, **kwargs):
+        isbn13 = kwargs['isbn13'] if 'isbn13' in kwargs else args[0]
+        count = kwargs['count'] if 'count' in kwargs else args[1]
+        bookstore = cls() if isinstance(cls, type) else cls
         if count <= 0:
             return
-        review_page_info = bookstore.get_review_page_info(isbn)
+
+        review_page_info = bookstore.get_review_page_info(isbn13)
         book_id = review_page_info['id']
         html = review_page_info['html']
 
@@ -112,10 +114,10 @@ class Naverbook(BookStore):
                         if cur_count >= count:
                             return
                 except (IndexError, AttributeError, ValueError) as e:
-                    raise ScrapeReviewContentsError(bookstore=bookstore, isbn=isbn, reason=e)
+                    raise ScrapeReviewContentsError(bookstore=bookstore, isbn13=isbn13, reason=e)
                 cur_page += 1
-                html = bookstore.session.get(bookstore.book_review_url + f'{book_id}&page={cur_page}').html
-
+                html = bookstore.session.get(bookstore.book_review_url + f'{book_id}&page={cur_page}',
+                                             headers=config["headers"]).html
         page = math.ceil(count / 10)
         yield from gen_reviews(html, book_id, page, count)
 
@@ -131,14 +133,14 @@ class Kyobo(BookStore):
         super().__init__()
         self.book_review_url = 'http://www.kyobobook.co.kr/product/detailViewKor.laf?barcode='
 
-    def find_book_id_with_isbn(self, isbn):
-        return isbn
+    def _find_book_id_with_isbn13(self, isbn13):
+        return isbn13
 
-    def make_book_review_url(self, book_id):
+    def _make_book_review_url(self, book_id):
         return self.book_review_url + f'{book_id}' + '#review_simple'
 
-    def get_review_page_info(self, isbn):
-        review_page_info = super(Kyobo, self).get_review_page_info(isbn)
+    def get_review_page_info(self, isbn13):
+        review_page_info = super(Kyobo, self).get_review_page_info(isbn13)
         html = review_page_info['html']
         html.render(retries=10, wait=2, scrolldown=5, sleep=0.3, keep_page=True)
         stars_info_text = html.xpath("//div[@class='klover_review']//strong[@class='score']")[-1].text
@@ -147,13 +149,13 @@ class Kyobo(BookStore):
         return {**review_page_info, **{'stars': stars, 'total': total}}
 
     @classmethod
-    def get_reviews(cls, **kwargs):
-        isbn = kwargs['isbn']
-        count = kwargs['count']
-        bookstore = cls()
+    def get_reviews(cls, *args, **kwargs):
+        isbn13 = kwargs['isbn13'] if 'isbn13' in kwargs else args[0]
+        count = kwargs['count'] if 'count' in kwargs else args[1]
+        bookstore = cls() if isinstance(cls, type) else cls
         if count <= 0:
             return
-        review_page_info = bookstore.get_review_page_info(isbn)
+        review_page_info = bookstore.get_review_page_info(isbn13)
         html = review_page_info['html']
 
         def gen_reviews(html, page, count):
@@ -171,7 +173,7 @@ class Kyobo(BookStore):
                         if cur_count >= count:
                             return
                 except (IndexError, AttributeError, ValueError) as e:
-                    raise ScrapeReviewContentsError(bookstore=bookstore, isbn=isbn, reason=e)
+                    raise ScrapeReviewContentsError(bookstore=bookstore, isbn13=isbn13, reason=e)
                 cur_page += 1
                 js = f"javascript:_go_targetPage({cur_page})"
                 html.render(script=js,

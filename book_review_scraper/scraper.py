@@ -1,7 +1,8 @@
 from collections import Iterable
+from .bookstores import Naverbook
 
 
-def get_reviews(isbn, bookstores, count):
+def get_reviews(isbn, bookstores=Naverbook, count=10):
     """
     :param isbn: 리뷰를 보고 싶은 책의 isbn
     :param bookstores: 리뷰를 가져올 인터넷 서점(BookStore) 메타 클래스

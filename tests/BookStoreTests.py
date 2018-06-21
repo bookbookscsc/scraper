@@ -1,5 +1,5 @@
 import unittest
-from book_review_scraper.exceptions import FindBookIDError
+from book_review_scraper.exceptions import ISBNError
 from book_review_scraper.bookstores import Naverbook, Kyobo
 
 
@@ -9,16 +9,16 @@ class NaverbookTest(unittest.TestCase):
         self.naverbook = Naverbook()
 
     def test_isbn_2_book_id(self):
-        self.assertEqual(13608565, self.naverbook.find_book_id_with_isbn(9788932919126))
-        self.assertEqual(13588502, self.naverbook.find_book_id_with_isbn('9788954651288'))
-        self.assertEqual(8789740, self.naverbook.find_book_id_with_isbn(9788954634755))
-        self.assertEqual(8752557, self.naverbook.find_book_id_with_isbn('9788954634526'))
-        self.assertEqual(9651139, self.naverbook.find_book_id_with_isbn(9788954637954))
-        self.assertEqual(10486743, self.naverbook.find_book_id_with_isbn('9788954640084'))
-        self.assertEqual(7148809, self.naverbook.find_book_id_with_isbn(9788954620628))
-        self.assertRaises(FindBookIDError, self.naverbook.find_book_id_with_isbn, 123123)
-        self.assertRaises(FindBookIDError, self.naverbook.find_book_id_with_isbn, '123123')
-        self.assertRaises(FindBookIDError, self.naverbook.find_book_id_with_isbn, '978895462062')
+        self.assertEqual(13608565, self.naverbook._find_book_id_with_isbn13(9788932919126))
+        self.assertEqual(13588502, self.naverbook._find_book_id_with_isbn13('9788954651288'))
+        self.assertEqual(8789740, self.naverbook._find_book_id_with_isbn13(9788954634755))
+        self.assertEqual(8752557, self.naverbook._find_book_id_with_isbn13('9788954634526'))
+        self.assertEqual(9651139, self.naverbook._find_book_id_with_isbn13(9788954637954))
+        self.assertEqual(10486743, self.naverbook._find_book_id_with_isbn13('9788954640084'))
+        self.assertEqual(7148809, self.naverbook._find_book_id_with_isbn13(9788954620628))
+        self.assertRaises(ISBNError, self.naverbook._find_book_id_with_isbn13, 123123)
+        self.assertRaises(ISBNError, self.naverbook._find_book_id_with_isbn13, '123123')
+        self.assertRaises(ISBNError, self.naverbook._find_book_id_with_isbn13, '978895462062')
 
     def test_get_book_detail_page_info(self):
         book_detail_info = self.naverbook.get_review_page_info(9788932919126)

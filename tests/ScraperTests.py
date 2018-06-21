@@ -1,6 +1,7 @@
 import unittest
 from book_review_scraper import scraper
 from book_review_scraper.bookstores import Naverbook, Kyobo
+from book_review_scraper.exceptions import FindBookIDError
 
 
 class ScraperTests(unittest.TestCase):

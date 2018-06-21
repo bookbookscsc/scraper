@@ -1,8 +1,10 @@
 import os
 import sqlite3
 import logging
+import re
+from functools import wraps
 from datetime import datetime, timedelta
-from book_review_scraper.exceptions import BookIdCacheMissError, BookIdCacheExpiredError
+from book_review_scraper.exceptions import BookIdCacheMissError, BookIdCacheExpiredError, ISBNError
 
 
 class SqliteCache:
@@ -99,14 +101,17 @@ cache = SqliteCache()
 
 def cache_book_id(cache_table):
     def decorator(fn):
+        @wraps(fn)
         def wrapped(*args, **kwargs):
-            isbn = args[1]
+            isbn13 = args[1]
+            if re.match('[\d+]{13}', str(isbn13)) is None:
+                raise ISBNError(bookstore=cache_table, isbn=isbn13)
             try:
-                book_id = cache.get(cache_table, isbn)
+                book_id = cache.get(cache_table, isbn13)
                 return book_id
             except (BookIdCacheMissError, BookIdCacheExpiredError):
                 book_id = fn(*args, **kwargs)
-                cache.set(cache_table, isbn, book_id)
+                cache.set(cache_table, isbn13, book_id)
                 return book_id
         return wrapped
     return decorator
