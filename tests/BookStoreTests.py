@@ -34,7 +34,6 @@ class NaverbookTest(unittest.TestCase):
         self.assertEqual(15, len(list(self.naverbook.get_reviews(9791162540169, start=15, end=29))))
         self.assertEqual(10, len(list(self.naverbook.get_reviews(9791162540169))))
 
-
     def test_scraping_reviews_content(self):
         for review in self.naverbook.get_reviews(9791158160784, 5):
             self.assertIsInstance(review.title, str)
@@ -59,8 +58,8 @@ class KyoboTest(unittest.TestCase):
         self.assertIsInstance(book_detail_info['total'], int)
 
     def test_get_reviews(self):
-        self.assertEqual(15, len(list(self.kyobo.get_reviews(9791162540169, 15))))
-        self.assertEqual(1, len(list(self.kyobo.get_reviews(9791162540169, 1))))
+        self.assertEqual(15, len(list(self.kyobo.get_reviews(9791162540169))))
+        self.assertEqual(1, len(list(self.kyobo.get_reviews(9791162540169))))
 
     def test_scraping_reviews_content(self):
         for review in self.kyobo.get_reviews(9791158160784, 5):

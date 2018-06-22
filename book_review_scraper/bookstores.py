@@ -29,7 +29,7 @@ class BookStore(object):
         self.session = HTMLSession()
 
     def _find_book_id_with_isbn13(self, isbn13):
-        if re.match('[\d+]{13} ', str(isbn13)) is None:
+        if re.match('[\d+]{13}', str(isbn13)) is None:
             raise ISBNError(bookstore=self, isbn13=isbn13)
         url_to_find_id = self.url_to_find_id
         id_a_tag_xpath = self.id_a_tag_xpath
@@ -53,9 +53,40 @@ class BookStore(object):
         }
         return page_info
 
-    @classmethod
-    def get_reviews(cls, *args, **kwargs):
+    def prepare_gen_reviews(self, isbn13, start, end):
+        review_page_info = self.get_review_page_info(isbn13)
+        book_id = review_page_info['id']
+
+        helper = ReviewPagingHelper(start, end, Naverbook.REVIEWS_PER_PAGE)
+
+        start_page = helper.start_page
+        end_page = helper.end_page
+        start_review_idx = helper.start_idx
+        end_review_idx = helper.end_idx
+        count_to_get = helper.count_to_get
+        html = review_page_info['html']
+
+        if start_page != 1:
+            response = self.session.get(self.book_review_url + f'{book_id}&page={start_page}',
+                                        headers=config["headers"])
+            if not response.ok:
+                raise PagingError(bookstore=self.__str__(), isbn=isbn13)
+            html = response.html
+
+        return isbn13, book_id, start_page, end_page, start_review_idx, end_review_idx, count_to_get, html
+
+    def gen_reviews(self, isbn13, book_id, start_page, end_page,
+                    start_review_idx, end_review_idx, count_to_get, html):
         raise NotImplementedError
+
+    @classmethod
+    def get_reviews(cls, isbn13, start=1, end=10):
+        bookstore = cls() if isinstance(cls, type) else cls
+        prepared = bookstore.prepare_gen_reviews(isbn13, start, end)
+        yield from bookstore.gen_reviews(*prepared)
+
+    def __str__(self):
+        return self.__class__.__name__
 
 
 class Naverbook(BookStore):
@@ -82,65 +113,38 @@ class Naverbook(BookStore):
         total = int(review_info_component[1].text)
         return {**review_page_info, **{'stars': stars, 'total': total}}
 
-    @classmethod
-    def get_reviews(cls, isbn13, start=1, end=10):
-        bookstore = cls() if isinstance(cls, type) else cls
-        review_page_info = bookstore.get_review_page_info(isbn13)
-        book_id = review_page_info['id']
-
-        helper = ReviewPagingHelper(start, end, Naverbook.REVIEWS_PER_PAGE)
-
-        start_page = helper.start_page
-        end_page = helper.end_page
-        start_review_idx = helper.start_idx
-        end_review_idx = helper.end_idx
-        count_to_get = helper.count_to_get
-
-        html = review_page_info['html']
-
-        if start_page != 1:
-            response = bookstore.session.get(bookstore.book_review_url + f'{book_id}&page={start_page}',
-                                             headers=config["headers"])
+    def gen_reviews(self, isbn13, book_id, start_page, end_page,
+                    start_review_idx, end_review_idx, count_to_get, html):
+        cur_page = start_page
+        cur_count = 0
+        while cur_page <= end_page:
+            s = 0 if (cur_page != start_page) else start_review_idx
+            e = Naverbook.REVIEWS_PER_PAGE + 1 if (cur_page != end_page) else end_review_idx
+            try:
+                for li in html.xpath("//ul[@id='reviewList']/li")[s:e]:
+                    title = li.xpath("//dl/dt")[0].text
+                    text = li.xpath("//dl/dd[starts-with(@id,'review_text')]")[0].text
+                    date = li.xpath("//dl/dd[@class='txt_inline']")[-1].text
+                    detail_link = li.xpath("//dl/dt/a")[-1].attrs['href']
+                    thumb_div = li.xpath("//div[@class='thumb']")
+                    if thumb_div:
+                        thumb_link = thumb_div[-1].xpath("//a/img")[-1].attrs['src']
+                        yield Naverbook.Review(title=title, text=text, created=date,
+                                               detail_link=detail_link, thumb_nail_link=thumb_link)
+                    else:
+                        yield Naverbook.Review(title, text=text, created=date,
+                                               detail_link=detail_link, thumb_nail_link=None)
+                    cur_count += 1
+                    if cur_count >= count_to_get:
+                        return
+            except (IndexError, AttributeError, ValueError) as e:
+                raise ScrapeReviewContentsError(bookstore=self.__str__(), isbn13=isbn13, reason=e)
+            cur_page += 1
+            response = self.session.get(self.book_review_url + f'{book_id}&page={cur_page}',
+                                        headers=config["headers"])
             if not response.ok:
-                raise PagingError(bookstore=bookstore, isbn=isbn13)
+                raise PagingError(bookstore=self.__str__(), isbn=isbn13)
             html = response.html
-
-        def gen_reviews(html, book_id):
-            cur_page = start_page
-            cur_count = 0
-            while cur_page <= end_page:
-                s = 0 if (cur_page != start_page) else start_review_idx
-                e = Naverbook.REVIEWS_PER_PAGE + 1 if (cur_page != end_page) else end_review_idx
-                try:
-                    for li in html.xpath("//ul[@id='reviewList']/li")[s:e]:
-                        title = li.xpath("//dl/dt")[0].text
-                        text = li.xpath("//dl/dd[starts-with(@id,'review_text')]")[0].text
-                        date = li.xpath("//dl/dd[@class='txt_inline']")[-1].text
-                        detail_link = li.xpath("//dl/dt/a")[-1].attrs['href']
-                        thumb_div = li.xpath("//div[@class='thumb']")
-                        if thumb_div:
-                            thumb_link = thumb_div[-1].xpath("//a/img")[-1].attrs['src']
-                            yield Naverbook.Review(title=title, text=text, created=date,
-                                                   detail_link=detail_link, thumb_nail_link=thumb_link)
-                        else:
-                            yield Naverbook.Review(title, text=text, created=date,
-                                                   detail_link=detail_link, thumb_nail_link=None)
-                        cur_count += 1
-                        if cur_count >= count_to_get:
-                            return
-                except (IndexError, AttributeError, ValueError) as e:
-                    raise ScrapeReviewContentsError(bookstore=bookstore, isbn13=isbn13, reason=e)
-                cur_page += 1
-                response = bookstore.session.get(bookstore.book_review_url + f'{book_id}&page={cur_page}',
-                                                 headers=config["headers"])
-                if not response.ok:
-                    raise PagingError(bookstore=bookstore, isbn=isbn13)
-                html = response.html
-
-        yield from gen_reviews(html, book_id)
-
-    def __str__(self):
-        return "Naverbook"
 
 
 class Kyobo(BookStore):
@@ -166,41 +170,27 @@ class Kyobo(BookStore):
         total = int(re.search("\((\d+)\)", html.xpath("//span[@class='kloverTotal']")[-1].text).group(1))
         return {**review_page_info, **{'stars': stars, 'total': total}}
 
-    @classmethod
-    def get_reviews(cls, *args, **kwargs):
-        isbn13 = kwargs['isbn13'] if 'isbn13' in kwargs else args[0]
-        count = kwargs['count'] if 'count' in kwargs else args[1]
-        bookstore = cls() if isinstance(cls, type) else cls
-        if count <= 0:
-            return
-        review_page_info = bookstore.get_review_page_info(isbn13)
-        html = review_page_info['html']
+    def gen_reviews(self, isbn13, book_id, start_page, end_page,
+                    start_review_idx, end_review_idx, count_to_get, html):
+        cur_page = start_page
+        cur_count = 0
+        while cur_page <= end_page:
+            try:
+                for li in html.xpath("//ul[@class='board_list']/li/div[@class='comment_wrap']"):
+                    date = li.xpath("//dl/dd[@class='date']")[0].text
+                    rating = li.xpath("//dl/dd[@class='kloverRating']/span")[0].text
+                    text = li.xpath("//dl/dd[@class='comment']/div[@class='txt']")[0].text
+                    likes = li.xpath("//li[@class='cmt_like']/span")[0].text
+                    yield Kyobo.Review(text=text.strip(), created=date, rating=float(rating), likes=int(likes))
+                    cur_count += 1
+                    if cur_count >= count_to_get:
+                        return
+            except (IndexError, AttributeError, ValueError) as e:
+                raise ScrapeReviewContentsError(bookstore=self.__str__(), isbn13=isbn13, reason=e)
+            cur_page += 1
+            js = f"javascript:_go_targetPage({cur_page})"
+            html.render(script=js,
+                        scrolldown=2,
+                        wait=0.5,
+                        keep_page=True)
 
-        def gen_reviews(html, page, count):
-            cur_page = 1
-            cur_count = 0
-            while cur_page <= page:
-                try:
-                    for li in html.xpath("//ul[@class='board_list']/li/div[@class='comment_wrap']"):
-                        date = li.xpath("//dl/dd[@class='date']")[0].text
-                        rating = li.xpath("//dl/dd[@class='kloverRating']/span")[0].text
-                        text = li.xpath("//dl/dd[@class='comment']/div[@class='txt']")[0].text
-                        likes = li.xpath("//li[@class='cmt_like']/span")[0].text
-                        yield Kyobo.Review(text=text.strip(), created=date, rating=float(rating), likes=int(likes))
-                        cur_count += 1
-                        if cur_count >= count:
-                            return
-                except (IndexError, AttributeError, ValueError) as e:
-                    raise ScrapeReviewContentsError(bookstore=bookstore, isbn13=isbn13, reason=e)
-                cur_page += 1
-                js = f"javascript:_go_targetPage({cur_page})"
-                html.render(script=js,
-                            scrolldown=2,
-                            wait=0.5,
-                            keep_page=True)
-
-        page = math.ceil(count / 15)
-        yield from gen_reviews(html, page, count)
-
-    def __str__(self):
-        return "Kyobo"

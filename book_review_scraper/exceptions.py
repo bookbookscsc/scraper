@@ -1,8 +1,8 @@
 
 class BookScrapingError(Exception):
-    def __init__(self, bookstore, isbn):
+    def __init__(self, bookstore, isbn13):
         self.bookstore = bookstore
-        self.isbn = isbn
+        self.isbn13 = isbn13
 
     def __str__(self):
         return f" BookStore : {self.bookstore} isbn : {self.isbn13}"
@@ -31,12 +31,12 @@ class ScrapeReviewContentsError(BookScrapingError):
 
 class BookIdCacheError(Exception):
 
-    def __init__(self, table, isbn13):
+    def __init__(self, table, isbn):
         self.table = table
-        self.isbn13 = isbn13
+        self.isbn13 = isbn
 
     def __str__(self):
-        return f" Table : {self.table} isbn : {self.isbn13}"
+        return f" Table : {self.table} isbn : {self.isbn}"
 
 
 class BookIdCacheMissError(BookIdCacheError):
