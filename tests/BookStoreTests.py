@@ -1,5 +1,5 @@
 import unittest
-from book_review_scraper.exceptions import ISBNError
+from book_review_scraper.exceptions import ISBNError, PagingError
 from book_review_scraper.bookstores import Naverbook, Kyobo
 
 
@@ -29,9 +29,11 @@ class NaverbookTest(unittest.TestCase):
         self.assertIsInstance(book_detail_info['total'], int)
 
     def test_get_reviews(self):
-        self.assertEqual(30, len(list(self.naverbook.get_reviews(9791162540169, 30))))
-        self.assertEqual(40, len(list(self.naverbook.get_reviews(9791162540169, 40))))
-        self.assertEqual(1, len(list(self.naverbook.get_reviews(9791162540169, 1))))
+        self.assertEqual(20, len(list(self.naverbook.get_reviews(9791162540169, start=1, end=20))))
+        self.assertEqual(7, len(list(self.naverbook.get_reviews(9791162540169, start=2, end=8))))
+        self.assertEqual(15, len(list(self.naverbook.get_reviews(9791162540169, start=15, end=29))))
+        self.assertEqual(10, len(list(self.naverbook.get_reviews(9791162540169))))
+
 
     def test_scraping_reviews_content(self):
         for review in self.naverbook.get_reviews(9791158160784, 5):

@@ -1,15 +1,22 @@
+
 class BookScrapingError(Exception):
     def __init__(self, bookstore, isbn):
         self.bookstore = bookstore
         self.isbn = isbn
 
     def __str__(self):
-        return f"BookStore : {self.bookstore} isbn : {self.isbn13}"
+        return f" BookStore : {self.bookstore} isbn : {self.isbn13}"
 
 
 class ISBNError(BookScrapingError):
     def __str__(self):
         return super(ISBNError, self).__str__() + " ISBN Error"
+
+
+class PagingError(BookScrapingError):
+    def __str__(self):
+        return super(PagingError, self).__str__() + " Paging Error"
+
 
 
 class FindBookIDError(BookScrapingError):
@@ -44,3 +51,5 @@ class BookIdCacheExpiredError(BookIdCacheError):
         return super(BookIdCacheMissError, self).__str__() + " cache expired"
 
 
+class HelperError(Exception):
+    pass

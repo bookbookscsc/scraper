@@ -3,7 +3,9 @@ import math
 from collections import namedtuple
 from requests_html import HTMLSession
 from book_review_scraper import cache
-from book_review_scraper.exceptions import FindBookIDError, ScrapeReviewContentsError, ISBNError
+from book_review_scraper.exceptions import FindBookIDError, ScrapeReviewContentsError, ISBNError, PagingError
+from book_review_scraper.helper import ReviewPagingHelper
+
 
 config = {
         'headers': {
@@ -22,7 +24,6 @@ class BookStore(object):
     """ 인터넷서점을 나타내는 클래스
 
     """
-    config = {}
 
     def __init__(self):
         self.session = HTMLSession()
@@ -60,6 +61,7 @@ class BookStore(object):
 class Naverbook(BookStore):
 
     Review = namedtuple("NaverbookReview", ["title", "text", "created", "detail_link", "thumb_nail_link"])
+    REVIEWS_PER_PAGE = 10
 
     def __init__(self):
         super().__init__()
@@ -81,23 +83,36 @@ class Naverbook(BookStore):
         return {**review_page_info, **{'stars': stars, 'total': total}}
 
     @classmethod
-    def get_reviews(cls, *args, **kwargs):
-        isbn13 = kwargs['isbn13'] if 'isbn13' in kwargs else args[0]
-        count = kwargs['count'] if 'count' in kwargs else args[1]
+    def get_reviews(cls, isbn13, start=1, end=10):
         bookstore = cls() if isinstance(cls, type) else cls
-        if count <= 0:
-            return
-
         review_page_info = bookstore.get_review_page_info(isbn13)
         book_id = review_page_info['id']
+
+        helper = ReviewPagingHelper(start, end, Naverbook.REVIEWS_PER_PAGE)
+
+        start_page = helper.start_page
+        end_page = helper.end_page
+        start_review_idx = helper.start_idx
+        end_review_idx = helper.end_idx
+        count_to_get = helper.count_to_get
+
         html = review_page_info['html']
 
-        def gen_reviews(html, book_id, page, count):
-            cur_page = 1
+        if start_page != 1:
+            response = bookstore.session.get(bookstore.book_review_url + f'{book_id}&page={start_page}',
+                                             headers=config["headers"])
+            if not response.ok:
+                raise PagingError(bookstore=bookstore, isbn=isbn13)
+            html = response.html
+
+        def gen_reviews(html, book_id):
+            cur_page = start_page
             cur_count = 0
-            while cur_page <= page:
+            while cur_page <= end_page:
+                s = 0 if (cur_page != start_page) else start_review_idx
+                e = Naverbook.REVIEWS_PER_PAGE + 1 if (cur_page != end_page) else end_review_idx
                 try:
-                    for li in html.xpath("//ul[@id='reviewList']/li"):
+                    for li in html.xpath("//ul[@id='reviewList']/li")[s:e]:
                         title = li.xpath("//dl/dt")[0].text
                         text = li.xpath("//dl/dd[starts-with(@id,'review_text')]")[0].text
                         date = li.xpath("//dl/dd[@class='txt_inline']")[-1].text
@@ -111,15 +126,18 @@ class Naverbook(BookStore):
                             yield Naverbook.Review(title, text=text, created=date,
                                                    detail_link=detail_link, thumb_nail_link=None)
                         cur_count += 1
-                        if cur_count >= count:
+                        if cur_count >= count_to_get:
                             return
                 except (IndexError, AttributeError, ValueError) as e:
                     raise ScrapeReviewContentsError(bookstore=bookstore, isbn13=isbn13, reason=e)
                 cur_page += 1
-                html = bookstore.session.get(bookstore.book_review_url + f'{book_id}&page={cur_page}',
-                                             headers=config["headers"]).html
-        page = math.ceil(count / 10)
-        yield from gen_reviews(html, book_id, page, count)
+                response = bookstore.session.get(bookstore.book_review_url + f'{book_id}&page={cur_page}',
+                                                 headers=config["headers"])
+                if not response.ok:
+                    raise PagingError(bookstore=bookstore, isbn=isbn13)
+                html = response.html
+
+        yield from gen_reviews(html, book_id)
 
     def __str__(self):
         return "Naverbook"
