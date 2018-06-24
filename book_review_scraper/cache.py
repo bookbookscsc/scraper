@@ -99,7 +99,7 @@ class SqliteCache:
 cache = SqliteCache()
 
 
-def cache_book_id(cache_table):
+def book_id(cache_table):
     def decorator(fn):
         @wraps(fn)
         def wrapped(*args, **kwargs):

@@ -18,7 +18,6 @@ class PagingError(BookScrapingError):
         return super(PagingError, self).__str__() + " Paging Error"
 
 
-
 class FindBookIDError(BookScrapingError):
     def __str__(self):
         return super(FindBookIDError, self).__str__() + f" Fail to find book id with {self.isbn13}"
