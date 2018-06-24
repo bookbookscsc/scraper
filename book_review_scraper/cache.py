@@ -105,7 +105,7 @@ def cache_book_id(cache_table):
         def wrapped(*args, **kwargs):
             isbn13 = args[1]
             if re.match('[\d+]{13}', str(isbn13)) is None:
-                raise ISBNError(bookstore=cache_table, isbn=isbn13)
+                raise ISBNError(bookstore=cache_table, isbn13=isbn13)
             try:
                 book_id = cache.get(cache_table, isbn13)
                 return book_id
