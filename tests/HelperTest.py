@@ -21,7 +21,7 @@ class ReviewPagingHelperTests(unittest.TestCase):
         helper = ReviewPagingHelper(-1, 20, 10)
         self.assertEqual(1, helper.start)
 
-    def test_review_start_and_end_idx(self):
+    def test_review_start_and_end_idx_when_per_page_is_10(self):
         helper = ReviewPagingHelper(10, 20, 10)
         self.assertEqual(9, helper.start_idx)
         self.assertEqual(10, helper.end_idx)
@@ -42,4 +42,9 @@ class ReviewPagingHelperTests(unittest.TestCase):
         self.assertEqual(5, helper.start_idx)
         self.assertEqual(9, helper.end_idx)
         self.assertEqual(49 - 16 + 1, helper.count_to_get)
+
+    def test_review_start_and_end_idx_when_per_page_is_5(self):
+        helper = ReviewPagingHelper(10, 20, 5)
+        self.assertEqual(4, helper.start_idx)
+        self.assertEqual(5, helper.end_idx)
 

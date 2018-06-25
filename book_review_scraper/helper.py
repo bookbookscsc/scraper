@@ -47,7 +47,7 @@ class ReviewPagingHelper(object):
         if mod == 1:
             return 0
         if mod == 0:
-            return 9
+            return self._per_page - 1
         return mod - 1
 
     @property
