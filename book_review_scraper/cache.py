@@ -110,8 +110,8 @@ def book_id(cache_table):
                 book_id = cache.get(cache_table, isbn13)
                 return book_id
             except (BookIdCacheMissError, BookIdCacheExpiredError):
-                book_id = fn(*args, **kwargs)
-                cache.set(cache_table, isbn13, book_id)
-                return book_id
+                review_info = fn(*args, **kwargs)
+                cache.set(cache_table, isbn13, review_info.bid)
+                return review_info
         return wrapped
     return decorator
