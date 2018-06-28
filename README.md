@@ -1,48 +1,67 @@
 #### A Simple Book Review Scraper
 
-인터넷 서점에서 책의 리뷰를 스크래핑 합니다. (네이버북, 교보문고)
+책의 isbn13 으로 인터넷 서점에서 리뷰를 스크래핑 합니다. (네이버북, 교보문고, Yes24)
 
 #### 사용 방법
 
 ```python
-from book_review_scraper import scraper
+from book_review_scraper.bookstores import (Naverbook, Kyobo, Yes24)
 
-for review in scraper.get_reviews(isbn13=9788932919126, bookstores=Naverbook, start=2, end=20):
+naverbook = Naverbook()
+
+for review in self.naverbook.get_reviews(9791162540169):
     print(review.title)
     print(review.text)
+    print(review.created)
+    ....
 
-for review in scraper.get_reviews(isbn13=9788932919126, bookstores=Kyobo, start=5, end=70):
-    print(review.title)
-    print(review.text)
+# 인터넷 서점의 기본정렬순(날짜) 으로 20번째 리뷰 부터 최대 50번째 리뷰까지 스크래핑 합니다.
+# 리뷰가 30개 밖에 없다면 20번째 부터 30번째 까지 스크래핑 합니다.
+naverbook.scraper_config = NaverBookConfig(start=20, end=50)
 
-for review in scraper.get_reviews(isbn13=9788932919126, bookstores=(Naverbook, Kyobo)):
-    print(review.title)
+for review in self.naverbook.get_reviews(9791162540169):
     print(review.text)
 ```
 
-또는
+서점마다 여러개의 리뷰 종류가 있을 수 있습니다.
 
-``` python
-
-from book_review_scraper import bookstores
-naverbook = bookstores.Naverbook()
-for review in naverbook.get_reviews(isbn13=9791158160784, start=6, end=10):
-    print(review.title)
-    print(review.text)
-    ...
-
-kyobo = bookstores.Kyobo()
-for review in kyobo.get_reviews(isbn13=9791158160784, start=6, end=20):
-    print(review.title)
-    print(review.text)
-    ...
-
-```
+ex) 교보문고는 북로그리뷰, 클로버리뷰가 있고, Yes24는 회원리뷰, 간단리뷰가 있습니다.
 
 ```python
-각 서점의 리뷰는 namedtuple 로 구현되어 있습니다.
 
-Kyobo.Review = namedtuple("NaverbookReview", ["title", "text", "created", "detail_link", "thumb_nail_link"])
-Naverbook.Review = namedtuple("KyoboReview", ["text", "created", "rating", "likes"])
 
+
+simple_review_config = Yes24Config(Yes24Config.SIMPLE, start=1, end=10)
+self.yes24.scrape_config = simple_review_config
+
+for review in self.yes24.get_reviews(9791162540169):
+    assertIsInstance(review, Yes24SimpleReview)
+
+member_review_config = Yes24Config(Yes24Config.MEMBER, start=2, end=10)
+self.yes24.scrape_config = member_review_config
+
+for review in self.yes24.get_reviews(9791162540169):
+    assertIsInstance(review, Yes24MemberReview)
+
+klover_config = KyoboConfig(KyoboConfig.KlOVER, start=1, end=10)
+book_log_config = KyoboConfig(KyoboConfig.BOOK_LOG, start=1, end=10)
+
+self.kyobo.scrape_config = klover_config
+
+for review in self.kyobo.get_reviews(9791162540169):
+    assertIsInstance(review, KloverReview)
+
+self.kyobo.scrape_config = book_log_config
+
+for review in self.kyobo.get_reviews(9791162540169):
+    assertIsInstance(review, BookLogReview)
+```
+
+책의 총 리뷰 개수, 총 점수를 얻고자 할때는
+
+```python
+book_review_info = self.kyobo.get_review_page_info(9791188461332)
+assertIsInstance(book_review_info.book_log_rating, float)
+assertIsInstance(book_review_info.klover_rating, float)
+assertIsInstance(book_review_info.book_log_count, int)
 ```
