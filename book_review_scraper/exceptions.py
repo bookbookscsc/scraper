@@ -24,8 +24,14 @@ class FindBookIDError(BookScrapingError):
 
 
 class ScrapeReviewContentsError(BookScrapingError):
+    def __init__(self, bookstore, isbn13, idx):
+        super(ScrapeReviewContentsError, self).__init__(bookstore, isbn13)
+        self.idx = idx
+
     def __str__(self):
-        return super(ScrapeReviewContentsError, self).__str__() + f" Fail to Scrape Review Contents of {self.isbn13}"
+        return super(ScrapeReviewContentsError, self).__str__() \
+               + f" Fail to Scrape Review Contents of {self.isbn13}" \
+               + f" idx : {self.idx}"
 
 
 class BookIdCacheError(Exception):
@@ -51,4 +57,8 @@ class BookIdCacheExpiredError(BookIdCacheError):
 
 
 class HelperError(Exception):
+    pass
+
+
+class ConfigError(Exception):
     pass
