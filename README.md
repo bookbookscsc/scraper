@@ -4,6 +4,8 @@
 
 #### 사용 방법
 
+pip3 install book_review_scraper
+
 ```python
 from book_review_scraper.bookstores import (Naverbook, Kyobo, Yes24)
 
@@ -29,6 +31,7 @@ ex) 교보문고는 북로그리뷰, 클로버리뷰가 있고, Yes24는 회원�
 
 ```python
 
+from book_review_scraper.config import (NaverBookConfig, Yes24Config, KyoboConfig)
 
 yes24 = Yes24()
 simple_review_config = Yes24Config(Yes24Config.SIMPLE, start=1, end=10)
