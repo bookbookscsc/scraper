@@ -54,47 +54,33 @@ class Yes24MemberReview(Review):
 
 class BookReviewInfo:
 
-    def __init__(self, book_id, book_title, rating=None, count=None):
+    def __init__(self, book_id, book_title):
         self.book_id = book_id
         self.book_title = book_title
-        self.rating = rating
-        self.count = count
 
 
 class NaverbookBookReviewInfo(BookReviewInfo):
 
     def __init__(self, book_id, book_title, rating, count):
-        super(NaverbookBookReviewInfo, self).__init__(book_id, book_title, rating, count)
+        super(NaverbookBookReviewInfo, self).__init__(book_id, book_title)
+        self.rating = rating
+        self.count = count
 
 
 class KyoboBookReviewInfo(BookReviewInfo):
 
-    def __init__(self, book_id, book_title, klover_rating, book_log_rating, count):
+    def __init__(self, book_id, book_title, klover_rating, book_log_rating, book_log_count):
+        super(KyoboBookReviewInfo, self).__init__(book_id, book_title)
         self.klover_rating = klover_rating
         self.book_log_rating = book_log_rating
-        super(KyoboBookReviewInfo, self).__init__(book_id, book_title, count=count)
-
-    @property
-    def rating(self):
-        return self._rating
-
-    @rating.setter
-    def rating(self, dummy):
-        self._rating = ((self.klover_rating / 2) + self.book_log_rating) / 2
+        self.book_log_count = book_log_count
 
 
 class Yes24BookReviewInfo(BookReviewInfo):
 
-    def __init__(self, book_id, book_title, content_rating, edit_rating, count):
+    def __init__(self, book_id, book_title, content_rating, edit_rating, member_review_count):
+        super(Yes24BookReviewInfo, self).__init__(book_id, book_title)
         self.content_rating = content_rating
         self.edit_rating = edit_rating
-        super(Yes24BookReviewInfo, self).__init__(book_id, book_title, count=count)
-
-    @property
-    def rating(self):
-        return self._rating
-
-    @rating.setter
-    def rating(self, dummy):
-        self._rating = (self.edit_rating + self.edit_rating) / 2
+        self.member_review_count = member_review_count
 
