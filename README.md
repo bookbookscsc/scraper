@@ -9,7 +9,7 @@ from book_review_scraper.bookstores import (Naverbook, Kyobo, Yes24)
 
 naverbook = Naverbook()
 
-for review in self.naverbook.get_reviews(9791162540169):
+for review in naverbook.get_reviews(9791162540169):
     print(review.title)
     print(review.text)
     print(review.created)
@@ -19,7 +19,7 @@ for review in self.naverbook.get_reviews(9791162540169):
 # 리뷰가 30개 밖에 없다면 20번째 부터 30번째 까지 스크래핑 합니다.
 naverbook.scraper_config = NaverBookConfig(start=20, end=50)
 
-for review in self.naverbook.get_reviews(9791162540169):
+for review in naverbook.get_reviews(9791162540169):
     print(review.text)
 ```
 
@@ -30,37 +30,37 @@ ex) 교보문고는 북로그리뷰, 클로버리뷰가 있고, Yes24는 회원�
 ```python
 
 
-
+yes24 = Yes24()
 simple_review_config = Yes24Config(Yes24Config.SIMPLE, start=1, end=10)
-self.yes24.scrape_config = simple_review_config
+yes24.scrape_config = simple_review_config
 
-for review in self.yes24.get_reviews(9791162540169):
+for review in yes24.get_reviews(9791162540169):
     assertIsInstance(review, Yes24SimpleReview)
 
 member_review_config = Yes24Config(Yes24Config.MEMBER, start=2, end=10)
-self.yes24.scrape_config = member_review_config
+yes24.scrape_config = member_review_config
 
-for review in self.yes24.get_reviews(9791162540169):
+for review in yes24.get_reviews(9791162540169):
     assertIsInstance(review, Yes24MemberReview)
 
 klover_config = KyoboConfig(KyoboConfig.KlOVER, start=1, end=10)
 book_log_config = KyoboConfig(KyoboConfig.BOOK_LOG, start=1, end=10)
 
-self.kyobo.scrape_config = klover_config
+kyobo.scrape_config = klover_config
 
-for review in self.kyobo.get_reviews(9791162540169):
+for review in kyobo.get_reviews(9791162540169):
     assertIsInstance(review, KloverReview)
 
-self.kyobo.scrape_config = book_log_config
+kyobo.scrape_config = book_log_config
 
-for review in self.kyobo.get_reviews(9791162540169):
+for review in kyobo.get_reviews(9791162540169):
     assertIsInstance(review, BookLogReview)
 ```
 
 책의 총 리뷰 개수, 총 점수를 얻고자 할때는
 
 ```python
-book_review_info = self.kyobo.get_review_page_info(9791188461332)
+book_review_info = kyobo.get_review_page_info(9791188461332)
 assertIsInstance(book_review_info.book_log_rating, float)
 assertIsInstance(book_review_info.klover_rating, float)
 assertIsInstance(book_review_info.book_log_count, int)
