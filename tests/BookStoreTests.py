@@ -1,7 +1,8 @@
 import unittest
 from book_review_scraper.bookstores import (Naverbook, Kyobo, Yes24)
 from book_review_scraper.review import (NaverBookReview, Yes24SimpleReview,
-                                        Yes24MemberReview, KloverReview, BookLogReview)
+                                        Yes24MemberReview, KloverReview, BookLogReview,
+                                        Yes24BookReviewInfo)
 from book_review_scraper.config import (NaverBookConfig, Yes24Config, KyoboConfig)
 
 
@@ -148,6 +149,15 @@ class Yes24Tests(unittest.TestCase):
 
         for review in self.yes24.get_reviews(9791162540169):
             self.assertIsInstance(review, Yes24MemberReview)
+
+    def test_get_review_info(self):
+        review_info = self.yes24.get_review_page_info(9788954651820)
+        self.assertIsInstance(review_info, Yes24BookReviewInfo)
+        self.assertIsInstance(review_info.content_rating, float)
+        self.assertIsInstance(review_info.edit_rating, float)
+        self.assertIsInstance(review_info.member_review_count, int)
+        self.assertIsInstance(review_info.book_title, str)
+        self.assertIsInstance(review_info.book_id, int)
 
 
 if __name__ == '__main__':
