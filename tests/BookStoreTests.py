@@ -12,8 +12,7 @@ class NaverbookTests(unittest.TestCase):
         self.naverbook = Naverbook()
 
     def test_get_review(self):
-        naver_config = NaverBookConfig(start=1, end=10)
-        self.naverbook.scrape_config = naver_config
+        self.naverbook.scrape_config = NaverBookConfig.blog(1, 10)
         count = 0
         for review in self.naverbook.get_reviews(9791162540169):
             self.assertIsInstance(review, NaverBookReview)
@@ -42,7 +41,7 @@ class KyoboTests(unittest.TestCase):
         self.kyobo = Kyobo()
 
     def test_klover_review(self):
-        klover_config = KyoboConfig(KyoboConfig.KlOVER, start=1, end=10)
+        klover_config = KyoboConfig.klover(1, 10)
         self.kyobo.scrape_config = klover_config
         count = 0
         for review in self.kyobo.get_reviews(9791162540169):
@@ -58,7 +57,7 @@ class KyoboTests(unittest.TestCase):
         self.assertEqual(5, count)
 
     def test_book_log_review(self):
-        book_log_config = KyoboConfig(KyoboConfig.BOOK_LOG, start=1, end=10)
+        book_log_config = KyoboConfig.book_log(1, 10)
         self.kyobo.scrape_config = book_log_config
         count = 0
         for review in self.kyobo.get_reviews(9791162540169):
@@ -85,8 +84,8 @@ class KyoboTests(unittest.TestCase):
         self.assertIsInstance(book_detail_info.book_log_count, int)
 
     def test_klover_and_boog_log_review(self):
-        klover_config = KyoboConfig(KyoboConfig.KlOVER, start=1, end=10)
-        book_log_config = KyoboConfig(KyoboConfig.BOOK_LOG, start=1, end=10)
+        klover_config = KyoboConfig.klover(1, 10)
+        book_log_config = KyoboConfig.book_log(1, 10)
 
         self.kyobo.scrape_config = klover_config
 
@@ -105,40 +104,28 @@ class Yes24Tests(unittest.TestCase):
         self.yes24 = Yes24()
 
     def test_simple_review(self):
-        simple_review_config = Yes24Config(Yes24Config.SIMPLE, start=1, end=5)
+        simple_review_config = Yes24Config.simple(1, 10)
         self.yes24.scrape_config = simple_review_config
-        count = 0
         for review in self.yes24.get_reviews(9791162540169):
             self.assertIsInstance(review, Yes24SimpleReview)
-            count += 1
-        self.assertEqual(5, count)
         self.yes24.scrape_config.start = 6
         self.yes24.scrape_config.end = 10
-        count = 0
         for review in self.yes24.get_reviews(9791162540169):
             self.assertIsInstance(review, Yes24SimpleReview)
-            count += 1
-        self.assertEqual(5, count)
 
     def test_member_review(self):
-        simple_review_config = Yes24Config(Yes24Config.MEMBER, start=1, end=5)
+        simple_review_config = Yes24Config.member(1, 10)
         self.yes24.scrape_config = simple_review_config
-        count = 0
         for review in self.yes24.get_reviews(9791162540169):
             self.assertIsInstance(review, Yes24MemberReview)
-            count += 1
-        self.assertEqual(5, count)
         self.yes24.scrape_config.start = 6
         self.yes24.scrape_config.end = 10
-        count = 0
         for review in self.yes24.get_reviews(9791162540169):
             self.assertIsInstance(review, Yes24MemberReview)
-            count += 1
-        self.assertEqual(5, count)
 
     def test_simple_and_member_review(self):
-        simple_review_config = Yes24Config(Yes24Config.SIMPLE, start=1, end=10)
-        member_review_config = Yes24Config(Yes24Config.MEMBER, start=2, end=10)
+        simple_review_config = Yes24Config.simple(1, 10)
+        member_review_config = Yes24Config.member(2, 10)
 
         self.yes24.scrape_config = simple_review_config
 

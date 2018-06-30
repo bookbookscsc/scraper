@@ -2,16 +2,26 @@ from book_review_scraper.exceptions import ConfigError
 
 
 class ScrapeConfig:
-    def __init__(self, start, end):
+    def __init__(self, review_type, start, end):
+        self.review_type = review_type
         self.start = start
         self.end = end
 
 
 class NaverBookConfig(ScrapeConfig):
 
-    def __init__(self, start, end):
-        super(NaverBookConfig, self).__init__(start, end)
-        self.per_page = 10
+    BLOG = 0
+
+    def __init__(self, review_type, start, end):
+        super(NaverBookConfig, self).__init__(review_type, start, end)
+
+    @classmethod
+    def blog(cls, start, end):
+        return cls(NaverBookConfig.BLOG, start, end)
+
+    @property
+    def per_page(self):
+        return 10
 
     def url(self, book_id, page_num):
         return "https://book.naver.com/bookdb/review.nhn?bid={}&page={}".format(book_id, page_num)
@@ -22,8 +32,16 @@ class Yes24Config(ScrapeConfig):
     MEMBER = 1
 
     def __init__(self, review_type, start, end):
-        super(Yes24Config, self).__init__(start, end)
+        super(Yes24Config, self).__init__(review_type, start, end)
         self.review_type = review_type
+
+    @classmethod
+    def simple(cls, start, end):
+        return cls(Yes24Config.SIMPLE, start, end)
+
+    @classmethod
+    def member(cls, start, end):
+        return cls(Yes24Config.MEMBER, start, end)
 
     @property
     def review_type(self):
@@ -53,8 +71,15 @@ class KyoboConfig(ScrapeConfig):
     BOOK_LOG = 1
 
     def __init__(self, review_type, start, end):
-        super(KyoboConfig, self).__init__(start, end)
-        self.review_type = review_type
+        super(KyoboConfig, self).__init__(review_type, start, end)
+
+    @classmethod
+    def klover(cls, start, end):
+        return cls(KyoboConfig.KlOVER, start, end)
+
+    @classmethod
+    def book_log(cls, start, end):
+        return cls(KyoboConfig.BOOK_LOG, start, end)
 
     @property
     def review_type(self):

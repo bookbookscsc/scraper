@@ -87,7 +87,7 @@ class BookStore(object):
 
 class Naverbook(BookStore):
 
-    def __init__(self, scrape_config=NaverBookConfig(start=1, end=10)):
+    def __init__(self, scrape_config=NaverBookConfig.blog(1, 10)):
         super().__init__(
             scrape_config=scrape_config,
             search_url='http://book.naver.com/search/search.nhn?sm=sta_hty.book&sug=&where=nexearch&query='
@@ -159,7 +159,7 @@ class Naverbook(BookStore):
 
 class Kyobo(BookStore):
 
-    def __init__(self, scrape_config=KyoboConfig(KyoboConfig.KlOVER, start=1, end=10)):
+    def __init__(self, scrape_config=KyoboConfig.klover(1, 10)):
         super().__init__(scrape_config=scrape_config,
                          search_url='http://www.kyobobook.co.kr/search/SearchKorbookMain.jsp?'
                                     'vPstrCategory=KOR&vPstrKeyWord={}&vPplace=top')
@@ -230,7 +230,7 @@ class Kyobo(BookStore):
 
 class Yes24(BookStore):
 
-    def __init__(self, scrape_config=Yes24Config(Yes24Config.SIMPLE, start=1, end=10)):
+    def __init__(self, scrape_config=Yes24Config.simple(1, 10)):
         super().__init__(scrape_config,
                          search_url='http://www.yes24.com/searchcorner/Search?keywordAd=&keyword=&query={}')
 
@@ -260,7 +260,7 @@ class Yes24(BookStore):
         compiled_review_text = re.search('회원리뷰 \((\d+)개\)', review_info_text)
 
         if compiled_review_text is not None:
-            member_review_count = compiled_review_text.group(1)
+            member_review_count = int(compiled_review_text.group(1))
 
         return Yes24BookReviewInfo(book_id, book_title, rating[0], rating[1], member_review_count)
 
