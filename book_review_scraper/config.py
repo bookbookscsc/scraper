@@ -116,7 +116,7 @@ class KyoboConfig(ScrapeConfig):
         if self.review_type is KyoboConfig.KlOVER:
             return 'http://www.kyobobook.co.kr/product/productSimpleReviewSort.laf?' \
                     'gb=klover&barcode={}&ejkGb=KOR&mallGb=KOR&sortType=date&pageNumber={}&orderType=all'.format(book_id,
-                                                                                                           page_num)
+                                                                                                                page_num)
         else:
             return 'http://www.kyobobook.co.kr/product/detailViewMultiPopup.laf?' \
                    'pageGb=KOR&popupMode=memberReviewDetail&ejkGb=KOR&barcode={}' \

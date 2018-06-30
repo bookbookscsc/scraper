@@ -58,6 +58,9 @@ class BookReviewInfo:
         self.book_id = book_id
         self.book_title = book_title
 
+    def __str__(self):
+        return self.__dict__.__str__()
+
 
 class NaverbookBookReviewInfo(BookReviewInfo):
 

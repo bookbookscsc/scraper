@@ -10,7 +10,7 @@ dependency_links = []
 
 setup(
     name='book_review_scraper',
-    version='0.4',
+    version='0.7',
     description='simple book review scraper',
     author='minomi',
     author_email='5minhominho@gmail.com',
