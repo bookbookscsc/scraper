@@ -31,7 +31,7 @@ class BookStore(object):
         self.scrape_config = scrape_config
         self.search_url = search_url
 
-    def get_review_page_info(self, isbn13):
+    def get_review_info(self, isbn13):
         pass
 
     def prepare_gen_reviews(self, isbn13):
@@ -53,7 +53,7 @@ class BookStore(object):
         start_review_idx = 5, end_review_idx = 9
         count_to_get = 34
         """
-        review_info = self.get_review_page_info(isbn13)
+        review_info = self.get_review_info(isbn13)
         book_id = review_info.book_id
 
         helper = ReviewPagingHelper(self.scrape_config.start,
@@ -104,7 +104,7 @@ class Naverbook(BookStore):
             count = int(rating_and_cnt[1])
         return rating, count
 
-    def get_review_page_info(self, isbn13):
+    def get_review_info(self, isbn13):
         if re.match('[\d+]{13}', str(isbn13)) is None:
             raise ISBNError(bookstore=self, isbn13=isbn13)
 
@@ -170,7 +170,7 @@ class Kyobo(BookStore):
                          search_url='http://www.kyobobook.co.kr/search/SearchKorbookMain.jsp?'
                                     'vPstrCategory=KOR&vPstrKeyWord={}&vPplace=top')
 
-    def get_review_page_info(self, isbn13):
+    def get_review_info(self, isbn13):
         if re.match('[\d+]{13}', str(isbn13)) is None:
             raise ISBNError(bookstore=self, isbn13=isbn13)
 
@@ -249,7 +249,7 @@ class Yes24(BookStore):
 
         return float(content_rating), float(edit_rating)
 
-    def get_review_page_info(self, isbn13):
+    def get_review_info(self, isbn13):
         if re.match('[\d+]{13}', str(isbn13)) is None:
             raise ISBNError(bookstore=self, isbn13=isbn13)
 
