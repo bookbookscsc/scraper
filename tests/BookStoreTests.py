@@ -78,7 +78,7 @@ class KyoboTests(unittest.TestCase):
             self.kyobo.scrape_config = book_log_config
             for review in self.kyobo.get_reviews(isbn13):
                 self.assertIsInstance(review, BookLogReview)
-
+                
 
 class Yes24Tests(unittest.TestCase):
 
