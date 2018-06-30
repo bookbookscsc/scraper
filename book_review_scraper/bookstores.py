@@ -95,7 +95,7 @@ class Naverbook(BookStore):
         self.id_a_tag_xpath = "//a[starts-with(@href,'http://book.naver.com/bookdb/book_detail.nhn?bid=')]"
 
     def _parsing_review_info(self, info_text):
-        rating_and_cnt = re.search('(\d+\.?\d{0,3})점 \| 네티즌리뷰 (\d{0,3}),?(\d{0,3})건 \|',
+        rating_and_cnt = re.search('(\d+\.?\d{0,3})점 \| 네티즌리뷰 (\d{0,3}),?(\d{0,3})건',
                                    info_text).group(1, 2, 3)
         rating = float(rating_and_cnt[0])
         if rating_and_cnt[1] and rating_and_cnt[2]:
