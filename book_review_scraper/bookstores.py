@@ -256,9 +256,13 @@ class Yes24(BookStore):
         book_id = int(re.search('goods\/(\d+)', book_id_text).group(1))
         book_title = row.xpath("td/p/a/strong")[0].text
         rating = self.calculate_rating(isbn13, review_rating_src)
-        cnt = re.search('회원리뷰 \((\d+)개\)', review_info_text).group(1)
+        member_review_count = 0
+        compiled_review_text = re.search('회원리뷰 \((\d+)개\)', review_info_text)
 
-        return Yes24BookReviewInfo(book_id, book_title, rating[0], rating[1], cnt)
+        if compiled_review_text is not None:
+            member_review_count = compiled_review_text.group(1)
+
+        return Yes24BookReviewInfo(book_id, book_title, rating[0], rating[1], member_review_count)
 
     def gen_reviews(self, isbn13, book_id, start_page, end_page,
                     start_review_idx, end_review_idx, count_to_get):
