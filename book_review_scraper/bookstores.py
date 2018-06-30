@@ -94,6 +94,16 @@ class Naverbook(BookStore):
         )
         self.id_a_tag_xpath = "//a[starts-with(@href,'http://book.naver.com/bookdb/book_detail.nhn?bid=')]"
 
+    def _parsing_review_info(self, info_text):
+        rating_and_cnt = re.search('(\d+\.?\d{0,3})점 \| 네티즌리뷰 (\d{0,3}),?(\d{0,3})건 \|',
+                                   info_text).group(1, 2, 3)
+        rating = float(rating_and_cnt[0])
+        if rating_and_cnt[1] and rating_and_cnt[2]:
+            count = int(rating_and_cnt[1]) * 1000 + int(rating_and_cnt[2])
+        else:
+            count = int(rating_and_cnt[1])
+        return rating, count
+
     def get_review_page_info(self, isbn13):
         if re.match('[\d+]{13}', str(isbn13)) is None:
             raise ISBNError(bookstore=self, isbn13=isbn13)
@@ -104,14 +114,10 @@ class Naverbook(BookStore):
             row = response.html.xpath("//ul[@id='searchBiblioList']/li[@style='position:relative;']")[0]
             info_li = row.text.split('\n')
             info_text = info_li[3]
-            rating_and_cnt = re.search('(\d+\.?\d{0,3})점 \| 네티즌리뷰 (\d+)건 \|', info_text).group(1, 2)
             id_a_tag = row.xpath(self.id_a_tag_xpath)[0]
-
             title = info_li[0]
             book_id = int(id_a_tag.attrs['href'].split('=')[-1])
-            rating = float(rating_and_cnt[0])
-            cnt = int(rating_and_cnt[1])
-            return NaverbookBookReviewInfo(book_id, title, rating, cnt)
+            return NaverbookBookReviewInfo(book_id, title, *self._parsing_review_info(info_text))
 
         except (ValueError, IndexError, AttributeError):
             raise FindBookIDError(isbn13=isbn13, bookstore=self)
@@ -260,7 +266,7 @@ class Yes24(BookStore):
         compiled_review_text = re.search('회원리뷰 \((\d+)개\)', review_info_text)
 
         if compiled_review_text is not None:
-            member_review_count = compiled_review_text.group(1)
+            member_review_count = int(compiled_review_text.group(1))
 
         return Yes24BookReviewInfo(book_id, book_title, rating[0], rating[1], member_review_count)
 

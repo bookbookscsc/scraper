@@ -31,7 +31,7 @@ class NaverbookTests(unittest.TestCase):
         book_detail_info = self.naverbook.get_review_page_info(9788932919126)
         self.assertIsInstance(book_detail_info.rating, float)
         self.assertIsInstance(book_detail_info.count, int)
-        book_detail_info = self.naverbook.get_review_page_info(9791188461332)
+        book_detail_info = self.naverbook.get_review_page_info(9788972756194)
         self.assertIsInstance(book_detail_info.rating, float)
         self.assertIsInstance(book_detail_info.count, int)
 
