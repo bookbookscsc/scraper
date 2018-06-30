@@ -10,7 +10,7 @@ dependency_links = []
 
 setup(
     name='book_review_scraper',
-    version='0.7',
+    version='0.8',
     description='simple book review scraper',
     author='minomi',
     author_email='5minhominho@gmail.com',
@@ -37,6 +37,5 @@ setup(
         'Programming Language :: Python',
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: Implementation :: CPython',
-        'Programming Language :: Python :: Implementation :: PyPy'
     ]
 )

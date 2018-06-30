@@ -68,7 +68,18 @@ assertIsInstance(book_review_info.book_log_rating, float)
 assertIsInstance(book_review_info.klover_rating, float)
 assertIsInstance(book_review_info.book_log_count, int)
 ```
+### [0.8]()
+> 리뷰 타입, 설정하는 하는 코드를 수정
 
+```python
+  simple_review_config = Yes24Config(Yes24Config.SIMPLE, start=1, end=10)
+  # or
+  simple_review_config = Yes24Config.simple(1, 10)
+
+  klover_config = KyoboConfig(KyoboConfig.KlOVER, start=1, end=10)
+  # or
+  klover_config = KyoboConfig.klover(start=1, end=10)
+```
 ### [0.7](https://github.com/bookbookscsc/scraper/commit/9b0ac084d987b18ec2464b02e3d51f60d43d1fb3)
 > naverbook 리뷰 정보를 가져오는 정규식 수정
 ### [0.5](https://github.com/bookbookscsc/scraper/commit/4888aae1ade7c77c9b4df3e8830dd264f32101ad)
