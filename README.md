@@ -68,3 +68,7 @@ assertIsInstance(book_review_info.book_log_rating, float)
 assertIsInstance(book_review_info.klover_rating, float)
 assertIsInstance(book_review_info.book_log_count, int)
 ```
+
+
+### [0.5](https://github.com/bookbookscsc/scraper/commit/4888aae1ade7c77c9b4df3e8830dd264f32101ad)
+> yes24 검색 화면에 회원리뷰가 없을때 처리 추가, book_id 캐쉬하는 모듈 삭제
