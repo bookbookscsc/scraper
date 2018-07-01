@@ -33,7 +33,12 @@ class BookStore(object):
         self.search_url = search_url
 
     def get_review_info(self, isbn13):
-        pass
+        """ 책의 리뷰 정보를 리턴한다.(ex 리뷰 총 개수, 평점) 리뷰정보는 서점마다 다름
+
+        :param isbn13: 책의 isbn
+        :return: 책의 리뷰 정보
+        """
+        raise NotImplementedError()
 
     def prepare_gen_reviews(self, isbn13):
         """ 리뷰들을 가져올 준비를 한다.
@@ -71,6 +76,17 @@ class BookStore(object):
 
     def gen_reviews(self, isbn13, book_id, start_page, end_page,
                     start_review_idx, end_review_idx, count_to_get):
+        """
+
+        :param isbn13: 책의 isbn13
+        :param book_id: 책 id
+        :param start_page: 스크래핑을 시작할 리뷰 시작 페이지
+        :param end_page: 스크래핑이 끝나야 하는 페이지
+        :param start_review_idx: 스크래핑을 시작할 리뷰 위치
+        :param end_review_idx: 스크래핑을 끝내야할 리뷰 위치
+        :param count_to_get: 스크래핑할 최대 리뷰 수
+        :return: 책에 대한 리뷰 제너레이터
+        """
         cur_page = start_page
         cur_count = 0
 
@@ -109,7 +125,7 @@ class BookStore(object):
         """ 책의 리뷰들을 가지고 온다. (각각 인터넷 서점의 기본 정렬 순)
 
         :param isbn13: 책 isbn13
-        :return: reviews 정보를 가지고 있는 제너레이터
+        :return: 책 리뷰 제너레이터
         """
         prepared = self.prepare_gen_reviews(isbn13)
         yield from self.gen_reviews(*prepared)
