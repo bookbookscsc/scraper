@@ -1,4 +1,9 @@
 from book_review_scraper.exceptions import ConfigError
+from book_review_scraper.review import (NaverBookReview,
+                                        KloverReview,
+                                        BookLogReview,
+                                        Yes24MemberReview,
+                                        Yes24SimpleReview)
 
 
 class ScrapeConfig:
@@ -6,6 +11,11 @@ class ScrapeConfig:
         self.review_type = review_type
         self.start = start
         self.end = end
+
+    @property
+    def li_xpath(self):
+        return "//li"
+
 
 
 class NaverBookConfig(ScrapeConfig):
@@ -23,8 +33,17 @@ class NaverBookConfig(ScrapeConfig):
     def per_page(self):
         return 10
 
+    @property
+    def ul_xpath(self):
+        return "//ul[@id='reviewList']"
+
     def url(self, book_id, page_num):
         return "https://book.naver.com/bookdb/review.nhn?bid={}&page={}".format(book_id, page_num)
+
+    @property
+    def review_meta_class(self):
+        return NaverBookReview
+
 
 
 class Yes24Config(ScrapeConfig):
@@ -33,7 +52,6 @@ class Yes24Config(ScrapeConfig):
 
     def __init__(self, review_type, start, end):
         super(Yes24Config, self).__init__(review_type, start, end)
-        self.review_type = review_type
 
     @classmethod
     def simple(cls, start, end):
@@ -44,12 +62,12 @@ class Yes24Config(ScrapeConfig):
         return cls(Yes24Config.MEMBER, start, end)
 
     @property
-    def review_type(self):
-        return self._review_type
-
-    @property
     def per_page(self):
         return 5
+
+    @property
+    def review_type(self):
+        return self._review_type
 
     @review_type.setter
     def review_type(self, review_type):
@@ -64,6 +82,17 @@ class Yes24Config(ScrapeConfig):
         else:
             return "http://www.yes24.com/24/communityModules/ReviewList/{}?SetYn=N&PageNumber={}".format(book_id,
                                                                                                          page_num)
+
+    @property
+    def review_meta_class(self):
+        if self.review_type is Yes24Config.SIMPLE:
+            return Yes24SimpleReview
+        else:
+            return Yes24MemberReview
+
+    @property
+    def ul_xpath(self):
+        return "//ul[@class='list']"
 
 
 class KyoboConfig(ScrapeConfig):
@@ -115,10 +144,17 @@ class KyoboConfig(ScrapeConfig):
     def url(self, book_id, page_num):
         if self.review_type is KyoboConfig.KlOVER:
             return 'http://www.kyobobook.co.kr/product/productSimpleReviewSort.laf?' \
-                    'gb=klover&barcode={}&ejkGb=KOR&mallGb=KOR&sortType=date&pageNumber={}&orderType=all'.format(book_id,
-                                                                                                                page_num)
+                    'gb=klover&barcode={}&ejkGb=KOR&mallGb=KOR&sortType=date&pageNumber={}' \
+                   '&orderType=all'.format(book_id, page_num)
         else:
             return 'http://www.kyobobook.co.kr/product/detailViewMultiPopup.laf?' \
                    'pageGb=KOR&popupMode=memberReviewDetail&ejkGb=KOR&barcode={}' \
                    '&sortColumn=reg_date&targetPage{}=&pageNumber=1&perPage=10'.format(book_id, page_num)
+
+    @property
+    def review_meta_class(self):
+        if self.review_type is KyoboConfig.KlOVER:
+            return KloverReview
+        else:
+            return BookLogReview
 

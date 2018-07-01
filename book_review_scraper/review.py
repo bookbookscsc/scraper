@@ -1,3 +1,5 @@
+import book_review_scraper.parsing as review_parser
+
 
 class Review:
     def __init__(self, text, created, isbn13):
@@ -16,6 +18,10 @@ class NaverBookReview(Review):
         self.detail_link = detail_link
         self.thumb_nail_link = thumb_nail_link
 
+    @classmethod
+    def instance(cls, li, isbn13):
+        return cls(*review_parser.parsing_blog_review(li), isbn13)
+
 
 class KyoboReview(Review):
     def __init__(self, text, created, rating, likes, isbn13):
@@ -28,11 +34,19 @@ class KloverReview(KyoboReview):
     def __init__(self, text, created, rating, likes, isbn13):
         super(KloverReview, self).__init__(text, created, rating, likes, isbn13)
 
+    @classmethod
+    def instance(cls, li, isbn13):
+        return cls(*review_parser.parsing_klover_review(li), isbn13)
+
 
 class BookLogReview(KyoboReview):
     def __init__(self, title, text, created, rating, likes, isbn13):
         super(BookLogReview, self).__init__(text, created, rating, likes, isbn13)
         self.title = title
+
+    @classmethod
+    def instance(cls, li, isbn13):
+        return cls(*review_parser.parsing_book_log_review(li), isbn13)
 
 
 class Yes24SimpleReview(Review):
@@ -40,6 +54,10 @@ class Yes24SimpleReview(Review):
         super(Yes24SimpleReview, self).__init__(text, created, isbn13)
         self.rating = rating
         self.likes = likes
+
+    @classmethod
+    def instance(cls, li, isbn13):
+        return cls(*review_parser.parsing_simple_review(li), isbn13)
 
 
 class Yes24MemberReview(Review):
@@ -50,6 +68,10 @@ class Yes24MemberReview(Review):
         self.edit_rating = edit_rating
         self.detail_link = detail_link
         self.likes = likes
+
+    @classmethod
+    def instance(cls, li, isbn13):
+        return cls(*review_parser.parsing_member_review(li), isbn13)
 
 
 class BookReviewInfo:
@@ -86,4 +108,3 @@ class Yes24BookReviewInfo(BookReviewInfo):
         self.content_rating = content_rating
         self.edit_rating = edit_rating
         self.member_review_count = member_review_count
-

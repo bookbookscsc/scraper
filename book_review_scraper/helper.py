@@ -1,5 +1,13 @@
 import math
-from book_review_scraper.exceptions import HelperError
+from book_review_scraper.exceptions import HelperError, StarImagesError
+
+
+def calculate_rating(star_images):
+    if len(star_images) % 5 != 0:
+        raise StarImagesError("별 이미지 배열의 개수는 5의 배수여야만 합니다")
+    content_rating = sum(1 for src in star_images[:5] if 'Off' not in src)
+    edit_rating = sum(1 for src in star_images[5:] if 'Off' not in src)
+    return float(content_rating), float(edit_rating)
 
 
 class ReviewPagingHelper(object):
