@@ -13,19 +13,34 @@ class NoReviewError(BookScrapingError):
         return super(NoReviewError, self).__str__() + " 리뷰가 없습니다."
 
 
+class LastReviewError(BookScrapingError):
+    def __str__(self):
+        return super(LastReviewError, self).__str__() + " 마지막 리뷰 입니다."
+
+
+class BookStoreSaleError(BookScrapingError):
+    def __str__(self):
+        return f"isbn13 : {self.isbn13} 은 {self.bookstore} 에서 판매 하지 않습니다."
+
+
 class ISBNError(BookScrapingError):
     def __str__(self):
-        return super(ISBNError, self).__str__() + " ISBN Error"
+        return super(ISBNError, self).__str__() + " ISBN13 형식이 아닙니다."
 
 
-class PagingError(BookScrapingError):
+class PaginationError(BookScrapingError):
     def __str__(self):
-        return super(PagingError, self).__str__() + " Paging Error"
+        return super(PaginationError, self).__str__() + " PaginationError Error"
 
 
 class FindBookIDError(BookScrapingError):
     def __str__(self):
         return super(FindBookIDError, self).__str__() + f" Fail to find book id with {self.isbn13}"
+
+
+class ParsingReviewInfoError(BookScrapingError):
+    def __str__(self):
+        return super(ParsingReviewInfoError, self).__str__() + " 리뷰 정보를 파싱하는데 실패했습니다."
 
 
 class ScrapeReviewContentsError(BookScrapingError):

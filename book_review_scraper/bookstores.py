@@ -1,6 +1,7 @@
 import re
 from requests_html import HTMLSession
-from .exceptions import (ScrapeReviewContentsError, ISBNError, PagingError, NoReviewError, BookStoreSaleError)
+from .exceptions import (ScrapeReviewContentsError, ISBNError, PaginationError,
+                         NoReviewError, BookStoreSaleError, StarImagesError, LastReviewError)
 from .helper import ReviewPagingHelper
 from .review import (NaverbookBookReviewInfo, KyoboBookReviewInfo, Yes24BookReviewInfo)
 from .config import (NaverBookConfig, Yes24Config, KyoboConfig)
@@ -104,33 +105,35 @@ class BookStore(object):
         response = self.session.get(self.scrape_config.page_url(book_id, cur_page),
                                     headers=headers)
         if not response.ok:
-            raise PagingError(bookstore=self.__str__(), isbn13=isbn13)
+            raise PaginationError(bookstore=self.__str__(), isbn13=isbn13)
 
-        ul = response.html.xpath(self.scrape_config.ul_xpath, first=True)
+        ul = response.html.xpath(self.scrape_config.ul_selector, first=True)
 
-        if ul is None:
-            raise NoReviewError(bookstore=self.__str__(), isbn13=isbn13)
+        if ul is None or ul.text in ('등록된 리뷰가 없습니다', ""):
+            raise LastReviewError(bookstore=self.__str__(), isbn13=isbn13)
 
         while cur_page <= end_page:
             s = 0 if (cur_page != start_page) else start_review_idx
             e = self.scrape_config.per_page + 1 if (cur_page != end_page) else end_review_idx
 
             try:
-                for li in ul.xpath(self.scrape_config.li_xpath)[s:e]:
+                for li in ul.xpath(self.scrape_config.li_selector)[s:e]:
                     review_meta_class = self.scrape_config.review_meta_class
                     yield review_meta_class.instance(li, isbn13)
                     cur_count += 1
                     if cur_count >= count_to_get:
                         return
-            except (IndexError, AttributeError, ValueError):
+            except (IndexError, AttributeError, ValueError, StarImagesError):
                 raise ScrapeReviewContentsError(bookstore=self.__str__(), isbn13=isbn13, idx=cur_count)
             cur_page += 1
             response = self.session.get(self.scrape_config.page_url(book_id, cur_page),
                                         headers=headers)
             if not response.ok:
-                raise PagingError(bookstore=self.__str__(), isbn13=isbn13)
+                raise LastReviewError(bookstore=self.__str__(), isbn13=isbn13)
 
-            ul = response.html.xpath(self.scrape_config.ul_xpath, first=True)
+            ul = response.html.xpath(self.scrape_config.ul_selector, first=True)
+            if not ul or ul.text in ('등록된 리뷰가 없습니다', ""):
+                raise LastReviewError(bookstore=self.__str__(), isbn13=isbn13)
 
     def get_reviews(self, isbn13):
         """ 책의 리뷰들을 가지고 온다. (각각 인터넷 서점의 기본 정렬 순)
@@ -166,6 +169,6 @@ class Kyobo(BookStore):
 class Yes24(BookStore):
 
     def __init__(self, scrape_config=Yes24Config.simple(1, 10)):
-        super().__init__(scrape_config,
+        super().__init__(scrape_config=scrape_config,
                          review_info_meta_class=Yes24BookReviewInfo,
                          parse_review_info_func=parse_yes24_review_info_from)

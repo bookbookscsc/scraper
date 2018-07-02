@@ -18,11 +18,11 @@ class ScrapeConfig:
         self.end = end
 
     @property
-    def ul_xpath(self):
+    def ul_selector(self):
         raise NotImplementedError
 
     @property
-    def li_xpath(self):
+    def li_selector(self):
         return "//li"
 
     @property
@@ -56,7 +56,7 @@ class NaverBookConfig(ScrapeConfig):
         return 10
 
     @property
-    def ul_xpath(self):
+    def ul_selector(self):
         return "//ul[@id='reviewList']"
 
     def page_url(self, book_id, page_num):
@@ -118,7 +118,7 @@ class Yes24Config(ScrapeConfig):
             return Yes24MemberReview
 
     @property
-    def ul_xpath(self):
+    def ul_selector(self):
         return "//ul[@class='list']"
 
 
@@ -155,14 +155,14 @@ class KyoboConfig(ScrapeConfig):
             return 10
 
     @property
-    def ul_xpath(self):
+    def ul_selector(self):
         if self.review_type is KyoboConfig.KlOVER:
             return "//ul[@class='board_list']"
         elif self.review_type is KyoboConfig.BOOK_LOG:
             return "//ul[@class='list_detail_booklog']"
 
     @property
-    def li_xpath(self):
+    def li_selector(self):
         if self.review_type is KyoboConfig.KlOVER:
             return "//li/div[@class='comment_wrap']"
         elif self.review_type is KyoboConfig.BOOK_LOG:
@@ -184,7 +184,7 @@ class KyoboConfig(ScrapeConfig):
         else:
             return 'http://www.kyobobook.co.kr/product/detailViewMultiPopup.laf?' \
                    'pageGb=KOR&popupMode=memberReviewDetail&ejkGb=KOR&barcode={}' \
-                   '&sortColumn=reg_date&targetPage{}=&pageNumber=1&perPage=10'.format(book_id, page_num)
+                   '&sortColumn=reg_date&targetPage={}&pageNumber=1&perPage=10'.format(book_id, page_num)
 
     def search_url(self, isbn13):
         return 'http://www.kyobobook.co.kr/search/SearchKorbookMain.jsp?' \
