@@ -5,11 +5,12 @@ from book_review_scraper.exceptions import HelperError, StarImagesError
 def calculate_rating(star_images):
     """ yes24 별 이미지링크 url 들로 내용점수, 편집점수를 계산합니다.
     ex) * * * o o * * * * o -> 3.0, 4.0
+    ex) * * * * 0 -> 4.0
     :param star_images:
     :return: yes24 내용점수, 편집점수
     """
-    if len(star_images) != 10:
-        raise StarImagesError("별 이미지 배열의 개수는 10개 이여만 합니다")
+    if len(star_images) % 5 != 0:
+        raise StarImagesError("별 이미지 배열의 개수는 5의 배수개여야 합니다")
     content_rating = sum(1 for src in star_images[:5] if 'Off' not in src)
     edit_rating = sum(1 for src in star_images[5:] if 'Off' not in src)
     return float(content_rating), float(edit_rating)

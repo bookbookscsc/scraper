@@ -4,11 +4,10 @@ from book_review_scraper.review import (NaverBookReview, Yes24SimpleReview,
                                         Yes24MemberReview, KloverReview, BookLogReview,
                                         Yes24BookReviewInfo)
 from book_review_scraper.config import (NaverBookConfig, Yes24Config, KyoboConfig)
-from book_review_scraper.exceptions import NoReviewError, BookStoreSaleError, LastReviewError
+from book_review_scraper.exceptions import BookStoreSaleError, LastReviewError
 
 many_reviews_books = [9791162540169, 9788932919126, 9788972756194]
-less_reviews_books = [9788998342418]
-no_review_book = 9772383908006
+less_reviews_books = [9788998342418, 9772383908006]
 not_for_sale_in_yes24 = 9772383908006
 
 
@@ -41,14 +40,6 @@ class NaverbookTests(unittest.TestCase):
         self.assertIsInstance(review.detail_link, str)
         if review.thumb_nail_link:
             self.assertIsInstance(review.thumb_nail_link, str)
-
-    def test_no_review_book(self):
-        try:
-            next(self.naverbook.get_reviews(no_review_book))
-        except NoReviewError:
-            self.assertTrue(True)
-        else:
-            self.fail()
 
     def test_last_review(self):
         for isbn13 in less_reviews_books:
@@ -209,7 +200,7 @@ class Yes24Tests(unittest.TestCase):
             try:
                 for _ in self.yes24.get_reviews(isbn13):
                     pass
-            except LastReviewError:
+            except (LastReviewError, BookStoreSaleError):
                 self.assertTrue(True)
             else:
                 self.fail()
@@ -217,7 +208,7 @@ class Yes24Tests(unittest.TestCase):
                 self.yes24.scrape_config.review_type = Yes24Config.MEMBER
                 for _ in self.yes24.get_reviews(isbn13):
                     pass
-            except LastReviewError:
+            except (LastReviewError, BookStoreSaleError):
                 self.assertTrue(True)
             else:
                 self.fail()
