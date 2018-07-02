@@ -19,8 +19,8 @@ class NaverBookReview(Review):
         self.thumb_nail_link = thumb_nail_link
 
     @classmethod
-    def instance(cls, li, isbn13):
-        return cls(*review_parser.parsing_blog_review(li), isbn13)
+    def instance(cls, html, isbn13):
+        return cls(*review_parser.parse_blog_review_from(html), isbn13)
 
 
 class KyoboReview(Review):
@@ -35,8 +35,8 @@ class KloverReview(KyoboReview):
         super(KloverReview, self).__init__(text, created, rating, likes, isbn13)
 
     @classmethod
-    def instance(cls, li, isbn13):
-        return cls(*review_parser.parsing_klover_review(li), isbn13)
+    def instance(cls, html, isbn13):
+        return cls(*review_parser.parse_klover_review_from(html), isbn13)
 
 
 class BookLogReview(KyoboReview):
@@ -45,8 +45,8 @@ class BookLogReview(KyoboReview):
         self.title = title
 
     @classmethod
-    def instance(cls, li, isbn13):
-        return cls(*review_parser.parsing_book_log_review(li), isbn13)
+    def instance(cls, html, isbn13):
+        return cls(*review_parser.parse_book_log_review_from(html), isbn13)
 
 
 class Yes24SimpleReview(Review):
@@ -56,8 +56,8 @@ class Yes24SimpleReview(Review):
         self.likes = likes
 
     @classmethod
-    def instance(cls, li, isbn13):
-        return cls(*review_parser.parsing_simple_review(li), isbn13)
+    def instance(cls, html, isbn13):
+        return cls(*review_parser.parse_simple_review_from(html), isbn13)
 
 
 class Yes24MemberReview(Review):
@@ -70,8 +70,8 @@ class Yes24MemberReview(Review):
         self.likes = likes
 
     @classmethod
-    def instance(cls, li, isbn13):
-        return cls(*review_parser.parsing_member_review(li), isbn13)
+    def instance(cls, html, isbn13):
+        return cls(*review_parser.parse_member_review_from(html), isbn13)
 
 
 class BookReviewInfo:
@@ -79,6 +79,10 @@ class BookReviewInfo:
     def __init__(self, book_id, book_title):
         self.book_id = book_id
         self.book_title = book_title
+
+    @classmethod
+    def instance(cls, *args):
+        return cls(*args)
 
     def __str__(self):
         return self.__dict__.__str__()
