@@ -1,11 +1,12 @@
 import re
 from requests_html import HTMLSession
-from .exceptions import (FindBookIDError, ScrapeReviewContentsError, ISBNError, PagingError, NoReviewError)
+from .exceptions import (ScrapeReviewContentsError, ISBNError, PagingError, NoReviewError, BookStoreSaleError)
 from .helper import ReviewPagingHelper
 from .review import (NaverbookBookReviewInfo, KyoboBookReviewInfo, Yes24BookReviewInfo)
 from .config import (NaverBookConfig, Yes24Config, KyoboConfig)
-from .parsing import parsing_review_info
-from .helper import calculate_rating
+from .parsing import (parse_blog_review_info_from,
+                      parse_kyobo_review_info_from,
+                      parse_yes24_review_info_from)
 
 headers = {
     'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
@@ -23,22 +24,32 @@ class BookStore(object):
 
     """
 
-    def __init__(self, scrape_config, search_url=None):
+    def __init__(self, scrape_config,
+                 review_info_meta_class=None,
+                 parse_review_info_func=None):
         """
         :param scrape_config: 가져올 리뷰 설정
-        :param search_url: 책 id 를 찾기 위한 검색 url
+        :param review_info_meta_class: 서점의 리뷰 정보 메타 클래스
+        :param parse_review_info_func: html 문자열안에서 리뷰 정보를 파싱하는 함수
         """
         self.session = HTMLSession()
         self.scrape_config = scrape_config
-        self.search_url = search_url
+        self.parse_review_info_func = parse_review_info_func
+        self.review_info_meta_class = review_info_meta_class
 
     def get_review_info(self, isbn13):
         """ 책의 리뷰 정보를 리턴한다.(ex 리뷰 총 개수, 평점) 리뷰정보는 서점마다 다름
 
-        :param isbn13: 책의 isbn
+        :param isbn13: 책의 isbn13
         :return: 책의 리뷰 정보
         """
-        raise NotImplementedError()
+        if re.match('[\d+]{13}', str(isbn13)) is None:
+            raise ISBNError(bookstore=self, isbn13=isbn13)
+        try:
+            response = self.session.get(self.scrape_config.search_url(isbn13), headers=headers)
+            return self.review_info_meta_class.instance(*self.parse_review_info_func(response.html, isbn13))
+        except (ValueError, IndexError, AttributeError):
+            raise BookStoreSaleError(bookstore=self.__str__(), isbn13=isbn13)
 
     def prepare_gen_reviews(self, isbn13):
         """ 리뷰들을 가져올 준비를 한다.
@@ -90,7 +101,7 @@ class BookStore(object):
         cur_page = start_page
         cur_count = 0
 
-        response = self.session.get(self.scrape_config.url(book_id, cur_page),
+        response = self.session.get(self.scrape_config.page_url(book_id, cur_page),
                                     headers=headers)
         if not response.ok:
             raise PagingError(bookstore=self.__str__(), isbn13=isbn13)
@@ -114,7 +125,7 @@ class BookStore(object):
             except (IndexError, AttributeError, ValueError):
                 raise ScrapeReviewContentsError(bookstore=self.__str__(), isbn13=isbn13, idx=cur_count)
             cur_page += 1
-            response = self.session.get(self.scrape_config.url(book_id, cur_page),
+            response = self.session.get(self.scrape_config.page_url(book_id, cur_page),
                                         headers=headers)
             if not response.ok:
                 raise PagingError(bookstore=self.__str__(), isbn13=isbn13)
@@ -139,78 +150,22 @@ class Naverbook(BookStore):
     def __init__(self, scrape_config=NaverBookConfig.blog(1, 10)):
         super().__init__(
             scrape_config=scrape_config,
-            search_url='http://book.naver.com/search/search.nhn?sm=sta_hty.book&sug=&where=nexearch&query='
+            review_info_meta_class=NaverbookBookReviewInfo,
+            parse_review_info_func=parse_blog_review_info_from
         )
-        self.id_a_tag_xpath = "//a[starts-with(@href,'http://book.naver.com/bookdb/book_detail.nhn?bid=')]"
-
-    def get_review_info(self, isbn13):
-        if re.match('[\d+]{13}', str(isbn13)) is None:
-            raise ISBNError(bookstore=self, isbn13=isbn13)
-
-        response = self.session.get(self.search_url + f'{isbn13}', headers=headers)
-
-        try:
-            row = response.html.xpath("//ul[@id='searchBiblioList']/li[@style='position:relative;']")[0]
-            info_li = row.text.split('\n')
-            info_text = info_li[3]
-            id_a_tag = row.xpath(self.id_a_tag_xpath)[0]
-            title = info_li[0]
-            book_id = int(id_a_tag.attrs['href'].split('=')[-1])
-            return NaverbookBookReviewInfo(book_id, title, *parsing_review_info(info_text))
-
-        except (ValueError, IndexError, AttributeError):
-            raise FindBookIDError(isbn13=isbn13, bookstore=self)
 
 
 class Kyobo(BookStore):
 
     def __init__(self, scrape_config=KyoboConfig.klover(1, 10)):
         super().__init__(scrape_config=scrape_config,
-                         search_url='http://www.kyobobook.co.kr/search/SearchKorbookMain.jsp?'
-                                    'vPstrCategory=KOR&vPstrKeyWord={}&vPplace=top')
-
-    def get_review_info(self, isbn13):
-        if re.match('[\d+]{13}', str(isbn13)) is None:
-            raise ISBNError(bookstore=self, isbn13=isbn13)
-
-        response = self.session.get(self.search_url.format(isbn13), headers=headers)
-        row = response.html.xpath("//table[@class='type_list']/tbody/tr")[0]
-
-        book_title = row.xpath("//div[@class='title']//strong")[0].text
-        klover_rating_text = row.xpath("//div[@class='review klover']//b")[0].text
-        book_log_cnt_text = row.xpath("//div[@class='review booklog']//b")[0].text
-        book_log_rating_text = row.xpath("//div[@class='rating']/img")[0].attrs['alt']
-
-        klover_rating = float(re.search("\d+\.?\d{0,3}", klover_rating_text).group())
-        book_log_cnt = int(book_log_cnt_text)
-        book_log_rating = float(re.search('5점 만점에 (\d)점', book_log_rating_text).group(1))
-
-        return KyoboBookReviewInfo(isbn13, book_title, klover_rating, book_log_rating, book_log_cnt)
+                         review_info_meta_class=KyoboBookReviewInfo,
+                         parse_review_info_func=parse_kyobo_review_info_from)
 
 
 class Yes24(BookStore):
 
     def __init__(self, scrape_config=Yes24Config.simple(1, 10)):
         super().__init__(scrape_config,
-                         search_url='http://www.yes24.com/searchcorner/Search?keywordAd=&keyword=&query={}')
-
-    def get_review_info(self, isbn13):
-        if re.match('[\d+]{13}', str(isbn13)) is None:
-            raise ISBNError(bookstore=self, isbn13=isbn13)
-
-        response = self.session.get(self.search_url.format(isbn13), headers=headers)
-        row = response.html.xpath("//div[@class='goodsList goodsList_list']//td[@ class ='goods_infogrp']")[0]
-        book_id_text = row.xpath("td/p/a")[0].attrs['href']
-        review_info_text = row.xpath("td/p[4]")[0].text
-        review_rating_src = [img.attrs['src'] for img in row.xpath("td/p[4]/img")]
-
-        book_id = int(re.search('goods\/(\d+)', book_id_text).group(1))
-        book_title = row.xpath("td/p/a/strong")[0].text
-        rating = calculate_rating(review_rating_src)
-        member_review_count = 0
-        compiled_review_text = re.search('회원리뷰 \((\d+)개\)', review_info_text)
-
-        if compiled_review_text is not None:
-            member_review_count = int(compiled_review_text.group(1))
-
-        return Yes24BookReviewInfo(book_id, book_title, rating[0], rating[1], member_review_count)
+                         review_info_meta_class=Yes24BookReviewInfo,
+                         parse_review_info_func=parse_yes24_review_info_from)
