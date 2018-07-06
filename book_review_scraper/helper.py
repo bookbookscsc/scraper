@@ -2,14 +2,24 @@ import math
 from book_review_scraper.exceptions import HelperError, StarImagesError
 
 
+def not_exist_review_in(html):
+    """
+    html 에 리뷰 컨텐츠가 없는지 체크
+    :param html: html 문자열
+    :return: 없으면 True 있으면 False
+    """
+    return html is None or html.text in ('등록된 리뷰가 없습니다', "", "이 도서의 첫번째 리뷰어가 되어 주세요.")
+
+
 def calculate_rating(star_images):
     """ yes24 별 이미지링크 url 들로 내용점수, 편집점수를 계산합니다.
     ex) * * * o o * * * * o -> 3.0, 4.0
+    ex) * * * * 0 -> 4.0
     :param star_images:
     :return: yes24 내용점수, 편집점수
     """
-    if len(star_images) != 10:
-        raise StarImagesError("별 이미지 배열의 개수는 10개 이여만 합니다")
+    if len(star_images) % 5 != 0:
+        raise StarImagesError("별 이미지 배열의 개수는 5의 배수개여야 합니다")
     content_rating = sum(1 for src in star_images[:5] if 'Off' not in src)
     edit_rating = sum(1 for src in star_images[5:] if 'Off' not in src)
     return float(content_rating), float(edit_rating)

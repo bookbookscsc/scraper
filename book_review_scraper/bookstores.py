@@ -2,7 +2,7 @@ import re
 from requests_html import HTMLSession
 from .exceptions import (ScrapeReviewContentsError, ISBNError, PaginationError,
                          NoReviewError, BookStoreSaleError, StarImagesError, LastReviewError)
-from .helper import ReviewPagingHelper
+from .helper import (ReviewPagingHelper, not_exist_review_in)
 from .review import (NaverbookBookReviewInfo, KyoboBookReviewInfo, Yes24BookReviewInfo)
 from .config import (NaverBookConfig, Yes24Config, KyoboConfig)
 from .parsing import (parse_blog_review_info_from,
@@ -109,7 +109,7 @@ class BookStore(object):
 
         ul = response.html.xpath(self.scrape_config.ul_selector, first=True)
 
-        if ul is None or ul.text in ('등록된 리뷰가 없습니다', ""):
+        if not_exist_review_in(ul):
             raise LastReviewError(bookstore=self.__str__(), isbn13=isbn13)
 
         while cur_page <= end_page:
@@ -132,7 +132,8 @@ class BookStore(object):
                 raise LastReviewError(bookstore=self.__str__(), isbn13=isbn13)
 
             ul = response.html.xpath(self.scrape_config.ul_selector, first=True)
-            if not ul or ul.text in ('등록된 리뷰가 없습니다', ""):
+
+            if not_exist_review_in(ul):
                 raise LastReviewError(bookstore=self.__str__(), isbn13=isbn13)
 
     def get_reviews(self, isbn13):

@@ -11,14 +11,14 @@ def parse_yes24_review_info_from(html, _):
 
     book_id = int(re.search('goods\/(\d+)', book_id_text).group(1))
     book_title = row.xpath("td/p/a/strong")[0].text
-    rating = calculate_rating(review_rating_src)
+    content_rating, edit_rating = calculate_rating(review_rating_src)
     member_review_count = 0
     compiled_review_text = re.search('회원리뷰 \((\d+)개\)', review_info_text)
 
     if compiled_review_text is not None:
         member_review_count = int(compiled_review_text.group(1))
 
-    return book_id, book_title, rating[0], rating[1], member_review_count
+    return book_id, book_title, content_rating, edit_rating, member_review_count
 
 
 def parse_kyobo_review_info_from(html, isbn13):
