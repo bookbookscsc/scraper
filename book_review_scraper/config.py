@@ -42,7 +42,7 @@ class ScrapeConfig:
 
 class NaverBookConfig(ScrapeConfig):
 
-    BLOG = 0
+    BLOG = "NaverBookBlogReview"
 
     def __init__(self, review_type, start, end):
         super(NaverBookConfig, self).__init__(review_type, start, end)
@@ -71,8 +71,8 @@ class NaverBookConfig(ScrapeConfig):
 
 
 class Yes24Config(ScrapeConfig):
-    SIMPLE = 0
-    MEMBER = 1
+    SIMPLE = "Yes24SimpleReview"
+    MEMBER = "Yes24MemberReview"
 
     def __init__(self, review_type, start, end):
         super(Yes24Config, self).__init__(review_type, start, end)
@@ -123,8 +123,8 @@ class Yes24Config(ScrapeConfig):
 
 
 class KyoboConfig(ScrapeConfig):
-    KlOVER = 0
-    BOOK_LOG = 1
+    KlOVER = "KyoboKloberReview"
+    BOOK_LOG = "KyoboBookLogReview"
 
     def __init__(self, review_type, start, end):
         super(KyoboConfig, self).__init__(review_type, start, end)
