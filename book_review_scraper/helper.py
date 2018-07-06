@@ -2,6 +2,15 @@ import math
 from book_review_scraper.exceptions import HelperError, StarImagesError
 
 
+def not_exist_review_in(html):
+    """
+    html 에 리뷰 컨텐츠가 없는지 체크
+    :param html: html 문자열
+    :return: 없으면 True 있으면 False
+    """
+    return html is None or html.text in ('등록된 리뷰가 없습니다', "", "이 도서의 첫번째 리뷰어가 되어 주세요.")
+
+
 def calculate_rating(star_images):
     """ yes24 별 이미지링크 url 들로 내용점수, 편집점수를 계산합니다.
     ex) * * * o o * * * * o -> 3.0, 4.0
