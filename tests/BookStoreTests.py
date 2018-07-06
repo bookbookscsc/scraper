@@ -1,4 +1,5 @@
 import unittest
+from datetime import datetime
 from book_review_scraper.bookstores import (Naverbook, Kyobo, Yes24)
 from book_review_scraper.review import (NaverBookReview, Yes24SimpleReview,
                                         Yes24MemberReview, KloverReview, BookLogReview,
@@ -6,13 +7,21 @@ from book_review_scraper.review import (NaverBookReview, Yes24SimpleReview,
 from book_review_scraper.config import (NaverBookConfig, Yes24Config, KyoboConfig)
 from book_review_scraper.exceptions import NoReviewError, BookStoreSaleError, LastReviewError
 
-many_reviews_books = [9791162540169, 9788932919126, 9788972756194]
+many_reviews_books = [9791162540169]
 less_reviews_books = [9788998342418]
 no_review_book = 9772383908006
 not_for_sale_in_yes24 = 9772383908006
 
 
-class NaverbookTests(unittest.TestCase):
+class BookStoreTests(unittest.TestCase):
+
+    def review_type_check(self, review):
+        self.assertIsInstance(review.text, str)
+        self.assertIsInstance(review.created, datetime)
+        self.assertIsInstance(review.isbn13, str)
+
+
+class NaverbookTests(BookStoreTests):
 
     def setUp(self):
         self.naverbook = Naverbook()
@@ -38,6 +47,7 @@ class NaverbookTests(unittest.TestCase):
             self.assertIsInstance(review_info.count, int)
 
     def blog_review_type_check(self, review):
+        super(NaverbookTests, self).review_type_check(review)
         self.assertIsInstance(review.detail_link, str)
         if review.thumb_nail_link:
             self.assertIsInstance(review.thumb_nail_link, str)
@@ -62,7 +72,7 @@ class NaverbookTests(unittest.TestCase):
                 self.fail()
 
 
-class KyoboTests(unittest.TestCase):
+class KyoboTests(BookStoreTests):
 
     def setUp(self):
         self.kyobo = Kyobo()
@@ -109,10 +119,12 @@ class KyoboTests(unittest.TestCase):
                 self.assertIsInstance(review, BookLogReview)
 
     def klover_review_type_check(self, review):
+        super(KyoboTests, self).review_type_check(review)
         self.assertIsInstance(review.rating, float)
         self.assertIsInstance(review.likes, int)
 
     def book_log_review_type_check(self, review):
+        super(KyoboTests, self).review_type_check(review)
         self.assertIsInstance(review.rating, float)
         self.assertIsInstance(review.likes, int)
 
@@ -129,7 +141,7 @@ class KyoboTests(unittest.TestCase):
                 self.fail()
 
 
-class Yes24Tests(unittest.TestCase):
+class Yes24Tests(BookStoreTests):
 
     def setUp(self):
         self.yes24 = Yes24()
@@ -184,10 +196,12 @@ class Yes24Tests(unittest.TestCase):
             self.assertIsInstance(review_info.book_id, int)
 
     def simple_review_type_check(self, review):
+        super(Yes24Tests, self).review_type_check(review)
         self.assertIsInstance(review.rating, float)
         self.assertIsInstance(review.likes, int)
 
     def member_review_type_check(self, review):
+        super(Yes24Tests, self).review_type_check(review)
         self.assertIsInstance(review.title, str)
         self.assertIsInstance(review.content_rating, float)
         self.assertIsInstance(review.edit_rating, float)

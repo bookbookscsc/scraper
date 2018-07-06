@@ -1,4 +1,5 @@
 import re
+from datetime import datetime
 from .helper import calculate_rating
 
 
@@ -61,7 +62,7 @@ def parse_blog_review_from(html):
         thumb_link = thumb_div[-1].xpath("//a/img")[-1].attrs['src']
     else:
         thumb_link = None
-    return title, text, created, detail_link, thumb_link
+    return title, text, datetime.strptime(created.strip(), "%Y.%m.%d"), detail_link, thumb_link
 
 
 def parse_klover_review_from(html):
@@ -69,7 +70,8 @@ def parse_klover_review_from(html):
     rating = float(html.xpath("//dl/dd[@class='kloverRating']/span")[0].text)
     text = html.xpath("//dl/dd[@class='comment']/div[@class='txt']")[0].text
     likes = int(html.xpath("//li[@class='cmt_like']/span")[0].text)
-    return text, created, rating, likes
+
+    return text, datetime.strptime(created.strip(), "%Y-%m-%d"), rating, likes
 
 
 def parse_book_log_review_from(html):
@@ -84,7 +86,7 @@ def parse_book_log_review_from(html):
     rating_text = header.xpath("//span/img", first=True).attrs['alt']
     rating = float(re.search('5점 만점에 (\d)점', rating_text).group(1))
     text = "\n".join(partial_text_list[1:-1])
-    return title, text, created, rating, likes
+    return title, text, datetime.strptime(created.strip(), "%Y-%m-%d"), rating, likes
 
 
 def parse_simple_review_from(html):
@@ -95,7 +97,7 @@ def parse_simple_review_from(html):
     rating = calculate_rating(review_rating_src)[0]
     likes = int(re.search('\d+', review_rating_text[2]).group())
     created = review_rating_text[1]
-    return text, rating, created, likes
+    return text, rating, datetime.strptime(created.strip(), "%Y-%m-%d"), likes
 
 
 def parse_member_review_from(html):
@@ -109,4 +111,4 @@ def parse_member_review_from(html):
     content_rating, edit_rating = calculate_rating(review_rating_src)
     created = review_rating_text[2]
     full_text = "\n".join([p.text for p in html.xpath('//li/span[2]/p') if p.text])
-    return title, full_text, created, likes, content_rating, edit_rating, detail_link
+    return title, full_text, datetime.strptime(created.strip(), "%Y-%m-%d"), likes, content_rating, edit_rating, detail_link
