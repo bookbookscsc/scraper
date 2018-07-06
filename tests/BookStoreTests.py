@@ -7,7 +7,7 @@ from book_review_scraper.config import (NaverBookConfig, Yes24Config, KyoboConfi
 from book_review_scraper.exceptions import BookStoreSaleError, LastReviewError
 
 many_reviews_books = [9791162540169, 9788932919126, 9788972756194]
-less_reviews_books = [9788998342418, 9772383908006]
+less_reviews_books = [9788998342418, 9772383908006, 9791196394509]
 not_for_sale_in_yes24 = 9772383908006
 
 
@@ -45,8 +45,8 @@ class NaverbookTests(unittest.TestCase):
         for isbn13 in less_reviews_books:
             self.naverbook.scrape_config.end = 11
             try:
-                for review in self.naverbook.get_reviews(isbn13):
-                    print(review)
+                for _ in self.naverbook.get_reviews(isbn13):
+                    pass
             except LastReviewError:
                 self.assertTrue(True)
             else:
@@ -71,13 +71,13 @@ class KyoboTests(unittest.TestCase):
 
     def test_book_log_review(self):
         for isbn13 in many_reviews_books:
-            book_log_config = KyoboConfig(KyoboConfig.BOOK_LOG, start=1, end=10)
+            book_log_config = KyoboConfig(KyoboConfig.BOOK_LOG, start=1, end=15)
             self.kyobo.scrape_config = book_log_config
             for review in self.kyobo.get_reviews(isbn13):
                 self.assertIsInstance(review, BookLogReview)
                 self.book_log_review_type_check(review)
-            self.kyobo.scrape_config.start = 6
-            self.kyobo.scrape_config.end = 10
+            self.kyobo.scrape_config.start = 1
+            self.kyobo.scrape_config.end = 15
             for review in self.kyobo.get_reviews(isbn13):
                 self.assertIsInstance(review, BookLogReview)
 
