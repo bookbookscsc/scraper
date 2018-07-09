@@ -142,7 +142,7 @@ class BookStore(object):
         :param isbn13: 책 isbn13
         :return: 책 리뷰 제너레이터
         """
-        prepared = self.prepare_gen_reviews(isbn13)
+        prepared = self.prepare_gen_reviews(str(isbn13))
         yield from self.gen_reviews(*prepared)
 
     def __str__(self):
