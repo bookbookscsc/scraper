@@ -54,7 +54,7 @@ class NaverbookTests(BookStoreTests):
 
     def test_last_review(self):
         for isbn13 in less_reviews_books:
-            self.naverbook.scrape_config.end = 11
+            self.naverbook.scrape_config.end = 10000
             try:
                 for _ in self.naverbook.get_reviews(isbn13):
                     pass
@@ -123,8 +123,7 @@ class KyoboTests(BookStoreTests):
     def test_last_review(self):
         for isbn13 in less_reviews_books:
             try:
-                self.kyobo.scrape_config.start = 10
-                self.kyobo.scrape_config.end = 16
+                self.kyobo.scrape_config.end = 10000
                 for _ in self.kyobo.get_reviews(isbn13):
                     pass
             except LastReviewError:
@@ -211,7 +210,7 @@ class Yes24Tests(BookStoreTests):
     def test_last_review(self):
         for isbn13 in less_reviews_books:
             self.yes24.scrape_config.review_type = Yes24Config.SIMPLE
-            self.yes24.scrape_config.end = 11
+            self.yes24.scrape_config.end = 10000
             try:
                 for _ in self.yes24.get_reviews(isbn13):
                     pass
