@@ -3,6 +3,19 @@ from datetime import datetime
 from .helper import calculate_rating
 
 
+def parse_interpark_review_info(html, _):
+    row = html.xpath("//div[@class='list_wrap']", first=True)
+    count_html = row.xpath("div/div/div[2]/div/p", first=True)
+    rating_html = row.xpath("//em[@class='rateNumber']", first=True)
+
+    book_id = int(row.xpath("div/div/div/div/label/input", first=True).attrs['prdno'])
+    count = int(re.search('\d+', count_html.text).group()) if count_html else 0
+    rating = float(rating_html.text) if rating_html else 0.0
+    title = row.xpath("div/div[2]/p[2]/b/a", first=True).text
+
+    return book_id, title, rating, count
+
+
 def parse_yes24_review_info(html, _):
     row = html.xpath("//div[@class='goodsList goodsList_list']//td[@ class ='goods_infogrp']", first=True)
     book_id_text = row.xpath("td/p/a", first=True).attrs['href']

@@ -1,10 +1,20 @@
 import unittest
 from datetime import datetime
-from book_review_scraper.bookstores import (Naverbook, Kyobo, Yes24)
-from book_review_scraper.review import (NaverBookReview, Yes24SimpleReview,
-                                        Yes24MemberReview, KloverReview, BookLogReview,
-                                        Yes24BookReviewInfo)
-from book_review_scraper.config import (NaverBookConfig, Yes24Config, KyoboConfig)
+from book_review_scraper.bookstores import (Naverbook, Kyobo, Yes24, Interpark)
+
+from book_review_scraper.review import (NaverBookReview,
+                                        Yes24SimpleReview,
+                                        Yes24MemberReview,
+                                        KloverReview,
+                                        BookLogReview)
+
+from book_review_scraper.review_info import (Yes24BookReviewInfo,
+                                             InterparkBookReviewInfo)
+
+from book_review_scraper.config import (NaverBookConfig,
+                                        Yes24Config,
+                                        KyoboConfig)
+
 from book_review_scraper.exceptions import BookStoreSaleError, LastReviewError
 
 
@@ -226,6 +236,23 @@ class Yes24Tests(BookStoreTests):
                 self.assertTrue(True)
             else:
                 self.fail()
+
+
+class InterparkbookTests(BookStoreTests):
+
+    def setUp(self):
+        self.interpark = Interpark()
+
+    def test_get_review_info(self):
+        for isbn13 in many_reviews_books:
+            review_info = self.interpark.get_review_info(isbn13)
+            self.assertIsInstance(review_info, InterparkBookReviewInfo)
+            self.assertIsInstance(review_info.book_id, int)
+            self.assertIsInstance(review_info.book_title, str)
+            self.assertIsInstance(review_info.normal_review_count, int)
+            self.assertIsInstance(review_info.normal_rating, float)
+
+
 
 
 if __name__ == '__main__':

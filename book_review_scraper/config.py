@@ -168,7 +168,6 @@ class KyoboConfig(ScrapeConfig):
         elif self.review_type is KyoboConfig.BOOK_LOG:
             return "//li"
 
-
     @property
     def review_meta_class(self):
         if self.review_type is KyoboConfig.KlOVER:
@@ -189,3 +188,28 @@ class KyoboConfig(ScrapeConfig):
     def search_url(self, isbn13):
         return 'http://www.kyobobook.co.kr/search/SearchKorbookMain.jsp?' \
                'vPstrCategory=KOR&vPstrKeyWord={}&vPplace=top'.format(isbn13)
+
+
+class InterparkConfig(ScrapeConfig):
+
+    NORMAL = "InterparkNormalReview"
+    EXPECTED = "InterparkExpected"
+
+    def __init__(self, review_type, start, end):
+        super(InterparkConfig, self).__init__(review_type, start, end)
+
+    @classmethod
+    def normal(cls, start, end):
+        return cls(InterparkConfig.NORMAL, start, end)
+
+    @classmethod
+    def expected(cls, start, end):
+        return cls(InterparkConfig.EXPECTED, start, end)
+
+    def search_url(self, isbn13):
+        return 'http://bsearch.interpark.com/dsearch/book.jsp?' \
+               'sch=all&sc.shopNo=&bookblockname=s_main&booklinkname=s_main&bid1=search_auto' \
+               '&bid2=product&bid3=000&bid4=001&query={}'.format(isbn13)
+
+
+
