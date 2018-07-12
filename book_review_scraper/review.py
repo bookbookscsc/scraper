@@ -1,4 +1,4 @@
-import book_review_scraper.parsing as review_parser
+import book_review_scraper.parser as review_parser
 
 
 class Review:
@@ -20,7 +20,7 @@ class NaverBookReview(Review):
 
     @classmethod
     def instance(cls, html, isbn13):
-        return cls(*review_parser.parse_blog_review_from(html), isbn13)
+        return cls(*review_parser.parse_blog_review(html), isbn13)
 
 
 class KyoboReview(Review):
@@ -36,7 +36,7 @@ class KloverReview(KyoboReview):
 
     @classmethod
     def instance(cls, html, isbn13):
-        return cls(*review_parser.parse_klover_review_from(html), isbn13)
+        return cls(*review_parser.parse_klover_review(html), isbn13)
 
 
 class BookLogReview(KyoboReview):
@@ -46,7 +46,7 @@ class BookLogReview(KyoboReview):
 
     @classmethod
     def instance(cls, html, isbn13):
-        return cls(*review_parser.parse_book_log_review_from(html), isbn13)
+        return cls(*review_parser.parse_book_log_review(html), isbn13)
 
 
 class Yes24SimpleReview(Review):
@@ -57,7 +57,7 @@ class Yes24SimpleReview(Review):
 
     @classmethod
     def instance(cls, html, isbn13):
-        return cls(*review_parser.parse_simple_review_from(html), isbn13)
+        return cls(*review_parser.parse_simple_review(html), isbn13)
 
 
 class Yes24MemberReview(Review):
@@ -71,7 +71,7 @@ class Yes24MemberReview(Review):
 
     @classmethod
     def instance(cls, html, isbn13):
-        return cls(*review_parser.parse_member_review_from(html), isbn13)
+        return cls(*review_parser.parse_member_review(html), isbn13)
 
 
 class BookReviewInfo:

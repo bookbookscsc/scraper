@@ -5,9 +5,9 @@ from .exceptions import (ScrapeReviewContentsError, ISBNError, PaginationError,
 from .helper import (ReviewPagingHelper, not_exist_review_in)
 from .review import (NaverbookBookReviewInfo, KyoboBookReviewInfo, Yes24BookReviewInfo)
 from .config import (NaverBookConfig, Yes24Config, KyoboConfig)
-from .parsing import (parse_blog_review_info_from,
-                      parse_kyobo_review_info_from,
-                      parse_yes24_review_info_from)
+from .parser import (parse_blog_review_info,
+                     parse_kyobo_review_info,
+                     parse_yes24_review_info)
 
 headers = {
     'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
@@ -155,7 +155,7 @@ class Naverbook(BookStore):
         super().__init__(
             scrape_config=scrape_config,
             review_info_meta_class=NaverbookBookReviewInfo,
-            parse_review_info_func=parse_blog_review_info_from
+            parse_review_info_func=parse_blog_review_info
         )
 
 
@@ -164,7 +164,7 @@ class Kyobo(BookStore):
     def __init__(self, scrape_config=KyoboConfig.klover(1, 10)):
         super().__init__(scrape_config=scrape_config,
                          review_info_meta_class=KyoboBookReviewInfo,
-                         parse_review_info_func=parse_kyobo_review_info_from)
+                         parse_review_info_func=parse_kyobo_review_info)
 
 
 class Yes24(BookStore):
@@ -172,4 +172,4 @@ class Yes24(BookStore):
     def __init__(self, scrape_config=Yes24Config.simple(1, 10)):
         super().__init__(scrape_config=scrape_config,
                          review_info_meta_class=Yes24BookReviewInfo,
-                         parse_review_info_func=parse_yes24_review_info_from)
+                         parse_review_info_func=parse_yes24_review_info)
