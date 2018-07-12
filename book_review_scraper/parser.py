@@ -3,7 +3,7 @@ from datetime import datetime
 from .helper import calculate_rating
 
 
-def parse_yes24_review_info_from(html, _):
+def parse_yes24_review_info(html, _):
     row = html.xpath("//div[@class='goodsList goodsList_list']//td[@ class ='goods_infogrp']", first=True)
     book_id_text = row.xpath("td/p/a", first=True).attrs['href']
     review_info_text = row.xpath("td/p[4]", first=True).text
@@ -21,7 +21,7 @@ def parse_yes24_review_info_from(html, _):
     return book_id, book_title, content_rating, edit_rating, member_review_count
 
 
-def parse_kyobo_review_info_from(html, isbn13):
+def parse_kyobo_review_info(html, isbn13):
     row = html.xpath("//table[@class='type_list']/tbody/tr")[0]
 
     book_title = row.xpath("//div[@class='title']//strong")[0].text
@@ -35,7 +35,7 @@ def parse_kyobo_review_info_from(html, isbn13):
     return isbn13, book_title, klover_rating, book_log_rating, book_log_cnt
 
 
-def parse_blog_review_info_from(html, _):
+def parse_blog_review_info(html, _):
     row = html.xpath("//ul[@id='searchBiblioList']/li[@style='position:relative;']", first=True)
     info_li = row.text.split('\n')
     info_text = info_li[3]
@@ -52,7 +52,7 @@ def parse_blog_review_info_from(html, _):
     return book_id, title, rating, count
 
 
-def parse_blog_review_from(html):
+def parse_blog_review(html):
     title = html.xpath("//dl/dt")[0].text
     text = html.xpath("//dl/dd[starts-with(@id,'review_text')]")[0].text
     created = html.xpath("//dl/dd[@class='txt_inline']")[-1].text
@@ -65,7 +65,7 @@ def parse_blog_review_from(html):
     return title, text, datetime.strptime(created.strip(), "%Y.%m.%d"), detail_link, thumb_link
 
 
-def parse_klover_review_from(html):
+def parse_klover_review(html):
     created = html.xpath("//dl/dd[@class='date']")[0].text
     rating = float(html.xpath("//dl/dd[@class='kloverRating']/span")[0].text)
     text = html.xpath("//dl/dd[@class='comment']/div[@class='txt']")[0].text
@@ -74,7 +74,7 @@ def parse_klover_review_from(html):
     return text, datetime.strptime(created.strip(), "%Y-%m-%d"), rating, likes
 
 
-def parse_book_log_review_from(html):
+def parse_book_log_review(html):
     full_text = html.text
     partial_text_list = full_text.split("\n")
     header = html.xpath("//div[@class='title']", first=True)
@@ -89,7 +89,7 @@ def parse_book_log_review_from(html):
     return title, text, datetime.strptime(created.strip(), "%Y-%m-%d"), rating, likes
 
 
-def parse_simple_review_from(html):
+def parse_simple_review(html):
     text = html.xpath('//li/strong', first=True).text
     review_rating_src = [img.attrs['src'] for img in html.xpath('//li/p/img')]
     review_rating_text = html.xpath('//li/p', first=True).text.split('|')
@@ -100,7 +100,7 @@ def parse_simple_review_from(html):
     return text, rating, datetime.strptime(created.strip(), "%Y-%m-%d"), likes
 
 
-def parse_member_review_from(html):
+def parse_member_review(html):
     title = html.xpath('//li/a/strong', first=True).text
     review_rating_src = [img.attrs['src'] for img in html.xpath('//li/p//img') if "sysimage" in img.attrs['src']]
     review_rating_text = html.xpath('//li/p')[0].text.split('|')
