@@ -3,11 +3,20 @@ from requests_html import HTMLSession
 from .exceptions import (ScrapeReviewContentsError, ISBNError, PaginationError,
                          NoReviewError, BookStoreSaleError, StarImagesError, LastReviewError)
 from .helper import (ReviewPagingHelper, not_exist_review_in)
-from .review import (NaverbookBookReviewInfo, KyoboBookReviewInfo, Yes24BookReviewInfo)
-from .config import (NaverBookConfig, Yes24Config, KyoboConfig)
+
+from .review_info import (NaverbookBookReviewInfo,
+                          KyoboBookReviewInfo,
+                          Yes24BookReviewInfo,
+                          InterparkBookReviewInfo)
+
+from .config import (NaverBookConfig,
+                     Yes24Config,
+                     KyoboConfig,
+                     InterparkConfig)
 from .parser import (parse_blog_review_info,
                      parse_kyobo_review_info,
-                     parse_yes24_review_info)
+                     parse_yes24_review_info,
+                     parse_interpark_review_info)
 
 headers = {
     'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
@@ -173,3 +182,12 @@ class Yes24(BookStore):
         super().__init__(scrape_config=scrape_config,
                          review_info_meta_class=Yes24BookReviewInfo,
                          parse_review_info_func=parse_yes24_review_info)
+
+
+class Interpark(BookStore):
+
+    def __init__(self, scrape_config=InterparkConfig.normal(1, 10)):
+        super().__init__(scrape_config=scrape_config,
+                         review_info_meta_class=InterparkBookReviewInfo,
+                         parse_review_info_func=parse_interpark_review_info)
+
