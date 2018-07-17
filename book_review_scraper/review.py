@@ -72,3 +72,20 @@ class Yes24MemberReview(Review):
     @classmethod
     def instance(cls, html, isbn13):
         return cls(*review_parser.parse_member_review(html), isbn13)
+
+
+class InterparkNormalReview(Review):
+
+    def __init__(self, title, text, created, rating, likes, isbn13):
+        super(InterparkNormalReview, self).__init__(text, created, isbn13)
+        self.title = title
+        self.rating = rating
+        self.likex = likes
+
+    @classmethod
+    def instance(cls, html, isbn13):
+        return cls(*review_parser.parse_inter_normal_review(html), isbn13)
+
+
+class InterparkExpectedReview(Review):
+    pass
