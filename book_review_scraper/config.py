@@ -211,5 +211,10 @@ class InterparkConfig(ScrapeConfig):
                'sch=all&sc.shopNo=&bookblockname=s_main&booklinkname=s_main&bid1=search_auto' \
                '&bid2=product&bid3=000&bid4=001&query={}'.format(isbn13)
 
-
-
+    def page_url(self, book_id, page_num):
+        if self.review_type is InterparkConfig.NORMAL:
+            return "http://book.interpark.com/product/ProductUsedReview.do?" \
+                   "_method=ProductReview&sc.prdNo={}&sc.sort=F&sc.reviewPage={}".format(book_id, page_num)
+        else:
+            return "http://book.interpark.com/product/BookUsedWritten.do?" \
+                   "_method=productUseWrite&prdNo={}&page={}&orderNum=&writtenTp=08&row=3".format(book_id, page_num)

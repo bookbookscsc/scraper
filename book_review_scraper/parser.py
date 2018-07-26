@@ -65,6 +65,10 @@ def parse_blog_review_info(html, _):
     return book_id, title, rating, count
 
 
+def parse_inter_normal_review(json):
+    pass
+
+
 def parse_blog_review(html):
     title = html.xpath("//dl/dt")[0].text
     text = html.xpath("//dl/dd[starts-with(@id,'review_text')]")[0].text
